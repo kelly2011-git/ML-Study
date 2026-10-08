@@ -1,0 +1,1381 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ML Lab DSBA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : sommaire fixe à gauche (cours → concepts), une fiche à la fois à droite. Surligneur jaune = repris du bandeau des slides du cours. */
+:root{
+  --bg:#f4f5f8; --surface:#ffffff; --surface-2:#eef0f5; --ink:#171a2c; --muted:#5a6079; --line:#dde0e9;
+  --accent:#2f3c8f; --accent-ink:#ffffff; --accent-soft:#e6e8f6;
+  --pos:#d4472b; --pos-soft:#f8ddd6; --neg:#3567cf; --neg-soft:#d9e3f8; --mix:#b13fd0;
+  --ok:#1d8556; --ok-soft:#d8f0e4; --warn:#a86a12; --warn-soft:#f8ead2;
+  --hl:#f6c444; --hl-soft:#fbe7a8;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#11131b; --surface:#191c27; --surface-2:#212534; --ink:#e8eaf3; --muted:#9ba1b9; --line:#2d3244;
+  --accent:#95a1ff; --accent-ink:#11131b; --accent-soft:#252a4a;
+  --pos:#ff7a5c; --pos-soft:#4a2620; --neg:#72a0ff; --neg-soft:#1f2c4d; --mix:#d07af0;
+  --ok:#4cc58c; --ok-soft:#173a2a; --warn:#e3a645; --warn-soft:#3b2d14;
+  --hl:#e8b64a; --hl-soft:#4a3a12; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#11131b; --surface:#191c27; --surface-2:#212534; --ink:#e8eaf3; --muted:#9ba1b9; --line:#2d3244;
+  --accent:#95a1ff; --accent-ink:#11131b; --accent-soft:#252a4a;
+  --pos:#ff7a5c; --pos-soft:#4a2620; --neg:#72a0ff; --neg-soft:#1f2c4d; --mix:#d07af0;
+  --ok:#4cc58c; --ok-soft:#173a2a; --warn:#e3a645; --warn-soft:#3b2d14;
+  --hl:#e8b64a; --hl-soft:#4a3a12; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.6;margin:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+a{color:var(--accent)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+mark{background:linear-gradient(transparent 55%, var(--hl-soft) 55%);color:inherit;padding:0 .1em}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:100%}
+.side{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow-y:auto;border-right:1px solid var(--line);background:var(--surface);padding:22px 16px 40px}
+.brand{display:flex;align-items:baseline;gap:8px;padding:0 8px 18px;border-bottom:1px solid var(--line);margin-bottom:14px;cursor:pointer}
+.brand b{font-family:var(--f-display);font-size:24px;font-weight:800;letter-spacing:-.02em}
+.brand span{font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.nav-sec{margin:14px 0 4px;padding:0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.nav a{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:7px;color:var(--ink);text-decoration:none;font-size:14px;line-height:1.3}
+.nav a:hover{background:var(--surface-2)}
+.nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.dot{flex:none;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--line)}
+.dot.done{background:var(--ok);border-color:var(--ok)}
+.nav a .tag{margin-left:auto;font-size:10px;font-family:var(--f-mono);color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.nav .tool{font-weight:500}
+.mbar{display:none}
+main{padding-inline:clamp(16px,4vw,56px);padding-block:36px 80px;min-width:0}
+.page{max-width:860px;margin:0 auto}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;inset:0 25% 0 0;z-index:30;height:100%;transform:translateX(-102%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.25);padding-top:calc(22px + env(safe-area-inset-top,0px))}
+  .side.open{transform:none}
+  .mbar{display:flex;position:sticky;top:env(safe-area-inset-top,0px);z-index:20;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+  .mbar b{font-family:var(--f-display);font-size:19px}
+  main{padding-block:22px 60px}
+}
+@media (max-width:520px){ .side{inset:0 10% 0 0} }
+
+/* ---------- common ---------- */
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.btn{text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 13px;cursor:pointer;font-size:14px;font-weight:500}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08);color:var(--accent-ink)}
+.btn.good{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+.btn.sm{padding:4px 10px;font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+
+/* concept page */
+.c-head{display:grid;gap:8px;margin-bottom:22px}
+.c-head h1{font-size:clamp(28px,4.4vw,40px);font-weight:800;letter-spacing:-.02em}
+.c-head .en{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.essentiel{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--hl);border-radius:var(--r);padding:16px 20px}
+.essentiel h2,.blk h2{font-size:13px;font-family:var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:8px}
+.essentiel ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.essentiel p{margin:0}
+.blk{margin-top:26px}
+.demo{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-top:10px}
+.demo-hint{font-size:13.5px;color:var(--muted);margin:0 0 12px}
+details.deep{margin-top:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+details.deep summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
+details.deep summary::-webkit-details-marker{display:none}
+details.deep summary::before{content:"+";font-family:var(--f-mono);width:18px;height:18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:4px;font-size:13px}
+details.deep[open] summary::before{content:"–"}
+details.deep .in{padding:0 18px 16px}
+details.deep .in p:first-child{margin-top:0}
+.trap{margin-top:12px;background:var(--warn-soft);border-radius:var(--r);padding:12px 16px;font-size:14.5px}
+.trap b:first-child{color:var(--warn)}
+.slides-ref{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.c-foot{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+
+/* formulas */
+.f{font-family:var(--f-mono);font-size:14.5px;background:var(--surface-2);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.fblock{font-family:var(--f-mono);font-size:15px;background:var(--surface-2);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;line-height:2}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.25;margin:0 3px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.frac>span:last-child{padding:0 3px}
+
+/* tables / matrices */
+.tbl-wrap{overflow-x:auto}
+table.cm{border-collapse:collapse;font-size:14px;margin:0 auto}
+table.cm td,table.cm th{border:1px solid var(--line);padding:7px 12px;text-align:center}
+table.cm th{font-weight:500;color:var(--muted);font-size:12.5px}
+.cell-tp{background:var(--pos-soft)} .cell-tn{background:var(--neg-soft)}
+.cell-fp,.cell-fn{background:var(--surface-2)}
+.cm .big{font-family:var(--f-mono);font-size:18px;font-weight:500;display:block}
+.cm .lab{font-size:11.5px;color:var(--muted)}
+.mat{display:inline-grid;gap:2px;font-family:var(--f-mono);font-size:12.5px;position:relative;padding:0 6px;vertical-align:middle}
+.mat::before,.mat::after{content:"";position:absolute;top:0;bottom:0;width:5px;border:1.5px solid var(--muted)}
+.mat::before{left:0;border-right:none}.mat::after{right:0;border-left:none}
+.mat span{min-width:38px;text-align:right;padding:1px 4px;border-radius:3px}
+.mat-cap{font-size:11.5px;font-family:var(--f-mono);color:var(--muted);text-align:center;margin-top:4px}
+.mrow{display:flex;flex-wrap:wrap;gap:12px;align-items:center;overflow-x:auto;padding-bottom:4px}
+.op{font-family:var(--f-mono);font-size:18px;color:var(--muted)}
+
+/* controls */
+.ctl{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr) 64px;gap:10px;align-items:center;font-size:14px}
+.ctl output{font-family:var(--f-mono);text-align:right}
+.ctls{display:grid;gap:8px;margin-bottom:14px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+@media (max-width:520px){.ctl{grid-template-columns:1fr 56px}.ctl input{grid-column:1/-1;grid-row:2}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:none;background:var(--surface);padding:6px 12px;cursor:pointer;font-size:13.5px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.grid2>*{min-width:0}
+svg.plot{width:100%;height:auto;display:block;overflow:hidden}
+svg .ax{stroke:var(--muted);stroke-width:1}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg text{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+svg .t-ink{fill:var(--ink)}
+.stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px}
+.stat div{background:var(--surface-2);border-radius:8px;padding:8px 10px;min-width:0}
+.stat small{display:block;font-size:11.5px;color:var(--muted);line-height:1.3}
+.stat b{font-family:var(--f-mono);font-size:17px;font-weight:500}
+.metrics{display:grid;gap:6px;font-size:14px}
+.metric{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;background:var(--surface-2);border-radius:8px;padding:7px 10px}
+.metric .nm{font-weight:600}
+.metric .al{font-size:12px;color:var(--muted);display:block;font-weight:400}
+.metric .calc{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);text-align:right}
+.metric .val{font-family:var(--f-mono);font-size:16px;color:var(--ink);display:block}
+.callout{border-radius:8px;padding:9px 12px;font-size:14px;margin-top:10px;background:var(--accent-soft)}
+.callout.ok{background:var(--ok-soft)}
+.pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line)}
+.pill.ok{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+.pill.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+
+/* home */
+.hero{display:grid;gap:10px;margin-bottom:28px}
+.hero h1{font-size:clamp(32px,5.5vw,52px);font-weight:800;letter-spacing:-.03em}
+.hero p{margin:0;max-width:62ch;color:var(--muted)}
+.lec-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.lec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:10px;align-content:start}
+.lec h3{font-size:21px}
+.bar{height:6px;background:var(--surface-2);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:9px;transition:width .3s}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12.5px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;cursor:pointer;background:var(--surface);text-decoration:none;color:var(--ink)}
+.chip.done{border-color:var(--ok);color:var(--ok)}
+.chip:hover{border-color:var(--accent)}
+.info{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px;margin-top:10px}
+.info div{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:var(--surface)}
+.info b{font-family:var(--f-display);font-size:26px;display:block;line-height:1.1}
+.info span{font-size:13px;color:var(--muted)}
+.howto{display:grid;gap:8px;margin:0;padding-left:20px}
+
+/* quiz */
+.q-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.q-prompt{font-size:17px;font-weight:500;margin:6px 0 14px}
+.q-opts{display:grid;gap:8px}
+.q-opt{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 14px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;line-height:1.45}
+.q-opt:hover:not([disabled]){border-color:var(--accent)}
+.q-opt .k{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-top:2px;flex:none}
+.q-opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.q-opt.wrong{border-color:var(--pos);background:var(--pos-soft)}
+.q-opt[disabled]{cursor:default}
+.q-exp{margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--surface-2);font-size:14.5px}
+.q-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.q-progress{display:flex;gap:3px;flex-wrap:wrap}
+.q-progress i{width:14px;height:6px;border-radius:3px;background:var(--surface-2)}
+.q-progress i.r{background:var(--ok)} .q-progress i.w{background:var(--pos)} .q-progress i.c{background:var(--accent)}
+
+/* formulaire */
+.fsec{margin-top:26px}
+.fsec h2{font-size:22px;margin-bottom:10px}
+.fl{display:grid;gap:8px}
+.fl>div{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 14px}
+.fl>div>span:first-child{font-weight:600;font-size:14px}
+.fl .fx{font-family:var(--f-mono);font-size:14px;overflow-x:auto}
+@media (max-width:560px){.fl>div{grid-template-columns:1fr;gap:2px}}
+
+/* demo specific */
+.sorter-q{font-size:16px;font-weight:500;margin-bottom:10px;min-height:3em}
+.matedit{display:inline-grid;gap:4px}
+.matedit input{width:46px;text-align:center;font-family:var(--f-mono);border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:3px 0}
+.dm{border-collapse:collapse;font-family:var(--f-mono);font-size:13px}
+.dm td,.dm th{border:1px solid var(--line);padding:4px 9px;text-align:center}
+.dm th{font-family:var(--f-body);font-weight:500;font-size:12.5px;color:var(--muted)}
+.dm td.sel-r,.dm th.sel-r{background:var(--neg-soft)}
+.dm td.sel-c,.dm th.sel-c{background:var(--pos-soft)}
+.dm td.sel-r.sel-c{background:var(--hl-soft)}
+.fold-grid{display:grid;gap:3px}
+.fold-row{display:grid;gap:3px;align-items:center;grid-template-columns:72px repeat(var(--k),1fr)}
+.fold-row span{font-size:12px;font-family:var(--f-mono);color:var(--muted)}
+.fold-row i{height:22px;border-radius:4px;background:var(--neg-soft);font-style:normal;font-size:11px;font-family:var(--f-mono);display:grid;place-items:center;color:var(--neg)}
+.fold-row i.v{background:var(--hl);color:#2a2000}
+.fold-row.cur i{outline:2px solid var(--accent);outline-offset:-2px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.steps button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 12px;font-size:13px;cursor:pointer}
+.steps button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="mbar"><button class="btn sm" id="menuBtn" aria-label="Ouvrir le sommaire">☰ Sommaire</button><b>ML Lab</b></div>
+  <nav class="side" id="side" aria-label="Sommaire"></nav>
+  <main><div class="page" id="page"></div></main>
+</div>
+<script>
+const F = (n, d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+
+const LECTURES = [
+  { id: 'l1', n: 1, title: 'Introduction, model selection & evaluation', short: 'Intro & évaluation', date: '1 oct. 2026', slides: 133 },
+  { id: 'l2', n: 2, title: 'Dimensionality reduction', short: 'Réduction de dimension', date: '8 oct. 2026', slides: 83 },
+];
+
+const CONCEPTS = [
+/* ======================= COURS 1 ======================= */
+{ id:'l1-types', lec:'l1', title:'Les types de problèmes ML', en:'supervised vs unsupervised', slides:'30, 62–78', demo:'types',
+  ess:`<ul>
+  <li><b>Supervised</b> : on a les données X <i>et</i> les labels y. On apprend f pour prédire y.
+    <br>→ <mark>Classification</mark> si y est discret (chat/chien, spam), <mark>Regression</mark> si y est continu (prix, nombre de clics).</li>
+  <li><b>Unsupervised</b> : pas de labels. On cherche une structure.
+    <br>→ <mark>Clustering</mark> (grouper les points similaires) ou <mark>Dimensionality reduction</mark> (décrire avec moins de variables).</li>
+  <li>On utilise le ML quand on ne sait pas écrire les règles à la main. Programme classique : data + rules → answers. ML : data + answers → rules.</li></ul>`,
+  deep:`<p><b>Quand le ML est utile</b> (slide 30) : quand l'expertise humaine n'existe pas (bioinformatique), quand on ne sait pas l'expliquer (reconnaître un « 2 » manuscrit, la parole), ou quand la solution change dans le temps (routage réseau). Pas besoin de ML pour calculer ses impôts.</p>
+  <p><b>Exemples du cours</b></p>
+  <ul>
+  <li>Classification : face recognition, spam detection, character recognition, precision medicine (ce patient est-il malade ?).</li>
+  <li>Regression : click prediction, load prediction (combien d'utilisateurs à 18h ?), algorithmic trading.</li>
+  <li>Clustering : customer segmentation, topic modeling, disease subtyping, community detection.</li>
+  <li>Dimensionality reduction : stockage, suppression des redondances, curse of dimensionality, visualisation en 2D/3D.</li></ul>
+  <p><b>Binary</b> classification : y ∈ {−1, +1}. <b>Multiclass</b> : y ∈ {1, …, K}. <b>Regression</b> : y ∈ ℝ.</p>`,
+  trap:`Ce qui compte, c'est la forme de la sortie, pas le sujet. Prédire une note de 1 à 5 étoiles peut être de la multiclass classification. Prédire un prix est une régression.` },
+
+{ id:'l1-design', lec:'l1', title:'La design matrix', en:'observations × features', slides:'78', demo:'design',
+  ess:`<ul>
+  <li>Les données forment une matrice <b>X</b> de taille <span class="f">n × p</span>.</li>
+  <li>Les <b>n lignes</b> sont les <mark>observations</mark> (samples, data points). Les <b>p colonnes</b> sont les <mark>features</mark> (variables, attributes).</li>
+  <li>En supervised, on a aussi un vecteur <b>y</b> de taille n : les <mark>labels</mark> (target, outcome).</li>
+  <li>Objectif : trouver f telle que <span class="f">f(xᵢ) ≈ yᵢ</span> pour chaque observation i.</li></ul>`,
+  deep:`<p>xᵢ désigne la i-ème ligne (un vecteur de p nombres). x<sub>ij</sub> désigne la valeur de la feature j pour l'observation i.</p>
+  <p>Exemple chat/chien du cours : features « good eater » et « human contact », label −1 (chat) ou +1 (chien). Chaque animal est un point dans le <b>feature space</b>.</p>
+  <p><b>Feature selection</b> (début du pipeline) : choisir des features informatives. « Pointy ears » et « size » séparent mieux chats et chiens que la couleur du collier.</p>`,
+  trap:`Les notations changent d'un cours à l'autre. Au cours 1, X est n × p (n observations). Au cours 2 (SVD/PCA), A est m × n (m objets, n attributs). L'idée est la même, seules les lettres changent.` },
+
+{ id:'l1-erm', lec:'l1', title:'Hypothesis class, loss & ERM', en:'empirical risk minimization', slides:'80–93', demo:'loss',
+  ess:`<ul>
+  <li><b>Hypothesis class F</b> : l'ensemble des fonctions qu'on s'autorise (des rectangles, des droites, des réseaux de neurones…). On la choisit selon ce qu'on croit du problème.</li>
+  <li><b>Loss L(y, f(x))</b> : mesure l'écart entre le vrai label et la prédiction.</li>
+  <li><b>ERM</b> : la vraie distribution D est inconnue. On minimise donc la loss moyenne sur le training set (<mark>empirical risk</mark>) au lieu de la vraie (<mark>true risk</mark>).</li></ul>
+  <div class="fblock">R̂(f) = ${F('1','n')} Σᵢ L(yᵢ, f(xᵢ))&nbsp;&nbsp;&nbsp;&nbsp;f̂ = argmin<sub>f ∈ F</sub> R̂(f)</div>`,
+  deep:`<p><b>Les 3 ingrédients du supervised learning</b> : une hypothesis class F, une loss L, une procédure d'optimisation.</p>
+  <ul>
+  <li><b>Quadratic loss</b> (y − f(x))² : pénalise fortement les grosses erreurs, donc sensible aux outliers.</li>
+  <li><b>Absolute loss</b> |y − f(x)| : croît linéairement, plus robuste aux outliers.</li>
+  <li><b>0/1 loss</b> : 1 si f(x) ≠ y, sinon 0. Compte les erreurs de classification. Pas dérivable, donc difficile à optimiser directement.</li></ul>
+  <p><b>True risk</b> : R(f) = E<sub>(x,y)~D</sub>[L(y, f(x))]. On suppose les exemples tirés <b>i.i.d.</b> de D. Quand n est grand, l'empirical risk converge vers le true risk.</p>
+  <p><b>Parametric</b> : f définie par des paramètres, ex. f(x) = wᵀx + b. <b>Non-parametric</b> : ex. f(x) = label du point le plus proche (nearest neighbors).</p>`,
+  trap:`L'empirical risk n'est qu'une estimation du true risk, et il est trop optimiste quand le modèle overfit. Minimiser l'empirical risk ne garantit pas de bien généraliser.` },
+
+{ id:'l1-overfit', lec:'l1', title:'Overfitting & underfitting', en:'generalization', slides:'96–102', demo:'overfit',
+  ess:`<ul>
+  <li>Le but n'est pas d'être bon sur le training set mais de <mark>généraliser</mark> à des données nouvelles.</li>
+  <li><b>Underfitting</b> : modèle trop simple. Erreur élevée partout, en train comme en test.</li>
+  <li><b>Overfitting</b> : modèle trop complexe, il apprend le bruit. Training error très basse, test error haute.</li>
+  <li>Quand la complexité augmente, la training error baisse toujours, mais la test error dessine un <b>U</b>.</li></ul>`,
+  deep:`<p><b>Pourquoi on ne peut pas viser 0 erreur</b> (slide 97) : les données contiennent du bruit. Features mal mesurées, erreurs de labels, features manquantes (latent).</p>
+  <p><b>Occam's razor</b> : à performance égale, préférer le modèle le plus simple. Il est plus facile à entraîner, plus rapide, plus interprétable, et il généralise mieux.</p>
+  <p>Dans la démo, la complexité est le degré du polynôme. Avec 12 points d'entraînement, un polynôme de degré 11 passe exactement par tous les points : training error ≈ 0, mais la courbe oscille n'importe comment entre eux.</p>`,
+  trap:`Une training error de 0 n'est pas une bonne nouvelle en soi. C'est souvent le signe d'un overfitting.` },
+
+{ id:'l1-biasvar', lec:'l1', title:'Bias–variance tradeoff', en:'bias-variance decomposition', slides:'103–110', demo:'biasvar',
+  ess:`<ul>
+  <li>Imagine qu'on ré-entraîne le même type de modèle sur plein de training sets différents.</li>
+  <li><b>Bias</b> : à quelle distance la prédiction <i>moyenne</i> est de la vérité. Modèle trop simple → high bias → <mark>underfitting</mark>.</li>
+  <li><b>Variance</b> : à quel point la prédiction <i>change</i> d'un training set à l'autre. Modèle trop complexe → high variance → <mark>overfitting</mark>.</li>
+  <li>Plus de complexité : bias ↓, variance ↑. C'est le tradeoff.</li></ul>
+  <div class="fblock">E[(y − f̂(x))²] = Bias[f̂(x)]² + Var[f̂(x)] + σ²</div>`,
+  deep:`<p><b>Cadre</b> : y = f(x) + ε, avec ε un bruit de moyenne 0 et de variance σ². f̂ dépend du training set tiré.</p>
+  <ul>
+  <li>Bias[f̂(x)] = E[f̂(x)] − f(x)</li>
+  <li>Var[f̂(x)] = E[(f̂(x) − E[f̂(x)])²]</li>
+  <li>σ² = erreur irréductible : même un modèle parfait la subit.</li></ul>
+  <p><b>La cible (slide 105)</b> : le centre est la bonne valeur, chaque tir est un modèle entraîné sur un autre training set. Bias = tirs groupés mais décalés. Variance = tirs dispersés.</p>
+  <p><b>Diagnostic</b> : high bias → training <i>et</i> test errors élevées. High variance → training error basse, test error élevée.</p>
+  <p><b>Astuce de la preuve</b> : E[X²] = Var(X) + E[X]².</p>`,
+  trap:`Plus de données réduit la <b>variance</b>, pas le <b>bias</b>. Un modèle trop simple reste trop simple, même avec un million d'exemples.` },
+
+{ id:'l1-split', lec:'l1', title:'Train, validation & test', en:'model selection vs assessment', slides:'111–119', demo:'split',
+  ess:`<ul>
+  <li><b>Training set</b> : pour entraîner les modèles.</li>
+  <li><b>Validation set</b> : pour comparer les modèles et choisir les hyperparamètres (ex. k du kNN). C'est la <mark>model selection</mark>.</li>
+  <li><b>Test set</b> : jamais touché pendant le processus, utilisé une seule fois à la fin pour estimer la generalization error. C'est la <mark>model assessment</mark>.</li></ul>
+  <div class="row" style="margin-top:12px;gap:3px;flex-wrap:nowrap">
+    <div style="flex:6;background:var(--neg-soft);color:var(--neg);border-radius:6px 0 0 6px;padding:6px 10px;font-size:13px">Training</div>
+    <div style="flex:2;background:var(--hl-soft);border-radius:0;padding:6px 10px;font-size:13px">Validation</div>
+    <div style="flex:2;background:var(--pos-soft);color:var(--pos);border-radius:0 6px 6px 0;padding:6px 10px;font-size:13px">Test</div></div>`,
+  deep:`<p>La training error est une mauvaise estimation de la generalization error : le modèle a déjà vu ces données.</p>
+  <p>Le validation set sert de « nouvelles données »… jusqu'au moment où on s'en sert pour choisir. Après, on a « triché » : il a influencé le choix, donc il n'est plus neutre. D'où le test set.</p>
+  <p>Combien de données dans chaque set ? Quand on en a peu, on réutilise les données : <b>cross-validation</b> ou <b>bootstrap</b> (tirage avec remise).</p>`,
+  trap:`Le score de validation du modèle <i>choisi</i> est biaisé vers le haut, car on a pris le meilleur. C'est la raison d'être du test set, et la démo le montre.` },
+
+{ id:'l1-cv', lec:'l1', title:'Cross-validation', en:'k-fold, LOOCV', slides:'120–125', demo:'cv',
+  ess:`<ul>
+  <li>On coupe les données en <b>k folds</b>. On entraîne k fois : à chaque tour, un fold sert de validation et les k − 1 autres d'entraînement.</li>
+  <li>CV error = moyenne des k erreurs de validation. Chaque point sert exactement une fois en validation.</li>
+  <li><b>LOOCV</b> (leave-one-out) = cas extrême où k = n.</li>
+  <li>En pratique : <mark>k = 5 ou 10</mark>, bon équilibre entre bias, variance et temps de calcul.</li></ul>`,
+  deep:`<p><b>Effet de k</b></p>
+  <ul>
+  <li><b>k petit</b> (k = 2) : chaque modèle ne voit que n/2 observations, beaucoup moins que le modèle final. L'erreur de CV est donc biaisée (trop pessimiste).</li>
+  <li><b>k grand</b> : chaque modèle voit presque tout, donc moins de bias. Mais il faut k entraînements.</li>
+  <li><b>LOOCV</b> : estimation presque sans biais et utilise presque toutes les données. Mais n entraînements (coûteux) et une variance élevée, car chaque fold de validation ne contient qu'un point.</li></ul>
+  <p>En scikit-learn : <span class="f">cross_val_score(model, X, y, cv=5)</span>.</p>`,
+  trap:`La CV sert à estimer la performance et à choisir le modèle. Une fois le choix fait, on ré-entraîne le modèle final sur toutes les données d'entraînement.` },
+
+{ id:'l1-confusion', lec:'l1', title:'Confusion matrix & métriques', en:'precision, recall, F1…', slides:'127–129', demo:'confusion',
+  ess:`<ul>
+  <li>4 cases : TP, TN, <b>FP</b> (fausse alarme = <mark>type I error</mark>), <b>FN</b> (raté = <mark>type II error</mark>).</li>
+  <li>Le deuxième mot (Positive/Negative) = ce que le modèle a <i>prédit</i>. True/False = s'il avait raison.</li>
+  <li>Toutes les métriques sont des ratios de ces 4 nombres. Le piège est toujours le dénominateur.</li></ul>
+  <div class="fblock">Recall = ${F('TP','TP + FN')}&nbsp;&nbsp;&nbsp;Precision = ${F('TP','TP + FP')}&nbsp;&nbsp;&nbsp;Specificity = ${F('TN','TN + FP')}</div>`,
+  deep:`<p><b>Pour s'en souvenir</b></p>
+  <ul>
+  <li><b>Recall</b> (= sensitivity = TPR) : parmi les vrais positifs, combien j'en trouve. Dénominateur = tous les vrais +1.</li>
+  <li><b>Precision</b> (= PPV) : parmi ce que j'ai prédit +1, combien sont justes. Dénominateur = tous les prédits +1.</li>
+  <li><b>Specificity</b> (= TNR) : parmi les vrais négatifs, combien je reconnais.</li>
+  <li><b>FDR</b> = FP / (TP + FP) = 1 − precision.</li>
+  <li><b>Accuracy</b> = (TP + TN) / total.</li>
+  <li><b>F1</b> = 2 · P · R / (P + R) : moyenne harmonique. Elle s'effondre dès que P ou R est faible.</li></ul>
+  <p><b>Quelle métrique privilégier ?</b> Le recall si un FN coûte cher (maladie, fraude). La precision si un FP coûte cher (un filtre anti-spam qui jette un mail important).</p>`,
+  trap:`<b>Accuracy paradox</b> : avec 99 % de négatifs, un modèle qui répond toujours −1 obtient 99 % d'accuracy et un recall de 0. Sur des données déséquilibrées, regarde precision, recall et F1.` },
+
+{ id:'l1-roc', lec:'l1', title:'ROC curve & AUC', en:'receiver operating characteristic', slides:'130–131', demo:'roc',
+  ess:`<ul>
+  <li>Le classifier sort un score X. On prédit +1 si <span class="f">X &gt; T</span>.</li>
+  <li>Chaque seuil T donne un point (FPR, TPR). En faisant varier T, on trace la <mark>ROC curve</mark>.</li>
+  <li>Diagonale = modèle au hasard (AUC = 0.5). Coin en haut à gauche = modèle parfait (AUC = 1).</li>
+  <li><b>AUC</b> = aire sous la courbe : la performance globale, tous seuils confondus.</li></ul>
+  <div class="fblock">TPR = ${F('TP','TP + FN')}&nbsp;&nbsp;&nbsp;&nbsp;FPR = ${F('FP','FP + TN')} = 1 − specificity</div>`,
+  deep:`<p><b>Les extrêmes</b> : T très bas → tout est prédit +1 → TPR = FPR = 1 (coin en haut à droite). T très haut → rien n'est prédit +1 → TPR = FPR = 0.</p>
+  <p><b>Ce qui fait l'AUC</b> : le recouvrement entre f₀ (distribution du score chez les négatifs) et f₁ (chez les positifs). Moins elles se chevauchent, plus la courbe monte vers le coin.</p>
+  <p><b>Interprétation de l'AUC</b> : la probabilité qu'un positif tiré au hasard ait un score plus élevé qu'un négatif tiré au hasard.</p>
+  <p>TPR et FPR sont calculés <i>à l'intérieur</i> de chaque classe : la ROC ne dépend pas de la proportion de positifs. La precision, elle, en dépend (essaie le curseur de prévalence).</p>
+  <p>Démo du prof : <a href="https://kennis-research.shinyapps.io/ROC-Curves/" target="_blank" rel="noopener">kennis-research.shinyapps.io/ROC-Curves</a></p>`,
+  trap:`Changer le seuil <b>déplace le point</b> sur la courbe, ça ne change pas la courbe. Seul un meilleur modèle (des distributions mieux séparées) améliore l'AUC.` },
+
+/* ======================= COURS 2 ======================= */
+{ id:'l2-why', lec:'l2', title:'Pourquoi réduire la dimension ?', en:'curse of dimensionality', slides:'12–24', demo:'curse',
+  ess:`<ul>
+  <li>Les données réelles ont souvent des milliers de dimensions (les mots d'un vocabulaire, les utilisateurs d'un réseau).</li>
+  <li><b>Curse of dimensionality</b> : en grande dimension, les données deviennent éparses et les distances perdent leur sens. Tous les points finissent à peu près à la même distance les uns des autres.</li>
+  <li>Souvent, les données vivent en fait dans un sous-espace plus petit. On cherche B (m × k) avec <span class="f">k ≪ n</span> qui garde l'essentiel de A (m × n).</li></ul>`,
+  deep:`<p><b>Pourquoi c'est utile</b> (slide 20) : découvrir des corrélations cachées (des mots qui apparaissent ensemble), éliminer les features bruitées, interpréter, visualiser en 2D/3D, stocker moins, calculer plus vite.</p>
+  <p><b>Exemples de matrices</b></p>
+  <ul>
+  <li>Document-term : A<sub>ij</sub> = fréquence du mot j dans le document i.</li>
+  <li>Recommandation : A<sub>ij</sub> = note du film j par le client i.</li></ul>
+  <p><b>Deux familles</b> : la <b>feature extraction</b> crée de nouvelles features qui combinent les anciennes (PCA, SVD, MDS…). La <b>feature selection</b> garde un sous-ensemble des features d'origine.</p>`,
+  trap:`Réduire la dimension ne sert pas qu'à compresser. En retirant les dernières dimensions, souvent du bruit, on fait ressortir la partie utile du signal.` },
+
+{ id:'l2-rank', lec:'l2', title:'Rank d\'une matrice', en:'rank = dimensionality', slides:'15–17', demo:'rank',
+  ess:`<ul>
+  <li><b>Rank</b> = nombre de lignes (ou de colonnes) <mark>linéairement indépendantes</mark>.</li>
+  <li>C'est la « vraie » dimension des données : si rank = 2, chaque ligne s'écrit avec seulement 2 vecteurs de base.</li>
+  <li><span class="f">r ≤ min(m, n)</span>, et r = nombre de singular values non nulles.</li></ul>`,
+  deep:`<p><b>Exemple de la slide 16</b> : les lignes [1 2 1], [−2 −3 1] et [3 5 0]. La troisième = première − deuxième, donc rank = 2.</p>
+  <p>On peut alors changer de base : avec les vecteurs [1 2 1] et [−2 −3 1], les trois points ont pour nouvelles coordonnées A = [1 0], B = [0 1], C = [1 −1]. On passe de 3 coordonnées à 2.</p>
+  <p>Dans la matrice clients × jours de la démo, chaque ligne est un multiple de [1 1 1 0 0] (semaine) ou de [0 0 0 1 1] (week-end). Rank = 2, même avec 6 clients.</p>`,
+  trap:`Une ligne de zéros, ou une ligne multiple d'une autre, n'augmente pas le rank. Et le rank des lignes est toujours égal au rank des colonnes.` },
+
+{ id:'l2-eigen', lec:'l2', title:'Eigenvalues & eigenvectors', en:'Au = λu', slides:'26', demo:'eigen',
+  ess:`<ul>
+  <li>u est un <b>eigenvector</b> de A si <span class="f">A u = λ u</span> : A ne fait qu'étirer u, sans le faire tourner. λ est l'<b>eigenvalue</b>, le facteur d'étirement.</li>
+  <li>Une matrice symétrique s'écrit <span class="f">A = U Λ Uᵀ</span> : U orthogonale (eigenvectors en colonnes), Λ = diag(λ₁ ≥ … ≥ λₙ).</li>
+  <li>C'est la brique de base de la SVD et de la PCA.</li></ul>`,
+  deep:`<p>λ est une eigenvalue si et seulement si (A − λI)u = 0 a une solution non nulle, c'est-à-dire <span class="f">det(A − λI) = 0</span>.</p>
+  <p><b>Matrice 2×2 symétrique</b> [[a, b], [b, d]] : λ = (a + d)/2 ± √(((a − d)/2)² + b²).</p>
+  <p><b>Exemple</b> : [[2, 1], [1, 2]] a λ₁ = 3 avec u₁ = [1, 1]/√2, et λ₂ = 1 avec u₂ = [1, −1]/√2.</p>
+  <p><b>Orthogonal matrix</b> : QᵀQ = QQᵀ = I. Les colonnes sont de norme 1 et perpendiculaires entre elles.</p>`,
+  trap:`Un eigenvector n'est défini qu'à un facteur près : u, −u ou 2u sont « le même ». C'est pour ça que les signes changent d'un logiciel à l'autre (et entre deux slides du cours).` },
+
+{ id:'l2-svd', lec:'l2', title:'SVD : A = UΣVᵀ', en:'singular value decomposition', slides:'27–41', demo:'svd',
+  ess:`<ul>
+  <li>Toute matrice réelle se décompose en <span class="f">A = U Σ Vᵀ</span>.</li>
+  <li><b>U</b> (m × r) : lignes ↔ concepts, ex. <mark>user-to-concept</mark>.</li>
+  <li><b>V</b> (n × r) : colonnes ↔ concepts, ex. <mark>movie-to-concept</mark>.</li>
+  <li><b>Σ</b> (r × r, diagonale) : la force de chaque concept, σ₁ ≥ σ₂ ≥ … ≥ 0.</li>
+  <li>U et V sont orthonormales : UᵀU = I, VᵀV = I.</li></ul>`,
+  deep:`<p><b>Somme de matrices de rank 1</b> : A = σ₁u₁v₁ᵀ + σ₂u₂v₂ᵀ + … Chaque terme est un « concept ».</p>
+  <p><b>Lien avec les eigenvalues</b> (slide 32)</p>
+  <ul>
+  <li>Colonnes de U = eigenvectors de AAᵀ.</li>
+  <li>Colonnes de V = eigenvectors de AᵀA.</li>
+  <li>σᵢ = √λᵢ, avec λᵢ les eigenvalues de AᵀA (ou AAᵀ).</li></ul>
+  <p>La SVD est <b>unique</b> (aux signes près). Coût : O(nm²) ou O(n²m), le plus petit des deux. Pour une matrice symétrique, singular values = |eigenvalues|.</p>`,
+  trap:`Attention aux dimensions : U est m × r (une ligne par user), V est n × r (une ligne par film), et c'est <b>Vᵀ</b> qui apparaît dans le produit.` },
+
+{ id:'l2-lowrank', lec:'l2', title:'Low-rank approximation & energy', en:'truncated SVD', slides:'42–56', demo:'lowrank',
+  ess:`<ul>
+  <li>Pour réduire la dimension, on garde les k plus grandes singular values et on met les autres à 0 : <span class="f">A_k = U_k Σ_k V_kᵀ</span>.</li>
+  <li>A_k est la <mark>meilleure approximation de rank k</mark> : elle minimise l'erreur de reconstruction ‖A − A_k‖_F.</li>
+  <li>Combien en garder ? Règle : conserver <mark>80–90 % de l'energy</mark>, avec energy = Σ σᵢ².</li></ul>`,
+  deep:`<p><b>Frobenius norm</b> : ‖M‖_F = √(Σᵢⱼ Mᵢⱼ²). Et ‖A − A_k‖_F² = σ²<sub>k+1</sub> + … + σ²<sub>r</sub> : l'erreur, c'est exactement l'energy jetée.</p>
+  <p><b>Vision géométrique</b> (slides 42–46) : chaque user est un point dans l'espace des films. v₁ est la direction qui minimise la somme des erreurs de reconstruction quand on projette les points dessus. Avec des données centrées, c'est aussi la direction de variance maximale, d'où le lien avec la PCA.</p>
+  <p>Nouvelle coordonnée 1D de chaque user = sa projection sur v₁ = colonne 1 de UΣ (= A v₁).</p>`,
+  trap:`L'energy se calcule avec les σᵢ <b>au carré</b>. Avec σ = 12.4, 9.5, 1.3, garder k = 1 conserve 62.6 % de l'energy, pas 12.4 / 23.2 = 53 %.` },
+
+{ id:'l2-pca', lec:'l2', title:'PCA : maximiser la variance', en:'principal component analysis', slides:'57–64', demo:'pca',
+  ess:`<ul>
+  <li>La <b>PCA</b> cherche les directions dans lesquelles les données <mark>varient le plus</mark>, puis projette les données dessus.</li>
+  <li>1<sup>er</sup> principal axis = direction de variance maximale. Les suivants sont orthogonaux aux précédents et maximisent la variance qui reste.</li>
+  <li>Solution : les eigenvectors de <span class="f">Σ = CᵀC</span> (C = données centrées), triés par eigenvalue décroissante.</li>
+  <li>Méthode unsupervised. Il faut <b>centrer</b> les données et, en général, <b>standardiser</b> les features.</li></ul>`,
+  deep:`<p><b>Le raisonnement</b> : projection sur une direction unitaire w → z = Xw. Avec les données centrées, Var(z) ∝ wᵀ(XᵀX)w = wᵀΣw.</p>
+  <p>On maximise wᵀΣw sous la contrainte ‖w‖ = 1. C'est un <b>Rayleigh quotient</b> : le maximum vaut λ₁ (la plus grande eigenvalue), atteint quand w = u₁ (son eigenvector).</p>
+  <p><b>Standardization</b> : mean centering (moyenne 0) puis variance scaling (variance 1). Sinon, une feature exprimée en grandes unités a une grande variance et domine tout.</p>
+  <p><b>PCA ↔ SVD</b> : si C = UΣVᵀ, alors CᵀC = VΣ²Vᵀ. Les principal axes sont les right singular vectors V, et λᵢ = σᵢ².</p>`,
+  trap:`Sans standardisation, une feature en grandes unités (un salaire en euros face à un âge en années) écrase les autres : PC1 s'aligne simplement sur elle. Essaie l'échelle ×5 dans la démo.` },
+
+{ id:'l2-pcaalgo', lec:'l2', title:'L\'algorithme PCA pas à pas', en:'PCA algorithm', slides:'65–66', demo:'pcasteps',
+  ess:`<ul>
+  <li>1. X : matrice m × n (m observations, n features).</li>
+  <li>2. Centrer : <span class="f">C = X − M</span> (on retire à chaque colonne sa moyenne).</li>
+  <li>3. Covariance : <span class="f">Σ = CᵀC</span>.</li>
+  <li>4. <b>Principal axes</b> = les k eigenvectors de Σ qui ont les plus grandes eigenvalues.</li>
+  <li>5. <b>Principal components</b> = projection <span class="f">C · U[1…k]</span>.</li></ul>
+  <div class="fblock">variance expliquée par k axes = ${F('λ₁ + … + λₖ','λ₁ + … + λₙ')}&nbsp;&nbsp;→ viser ≈ 85 %</div>`,
+  deep:`<p>La variance totale vaut trace(Σ) = λ₁ + … + λₙ. Pour choisir k, on prend le plus petit k qui explique environ 85 % de cette variance, comme pour l'energy de la SVD.</p>
+  <p>Le cours écrit Σ = CᵀC, sans diviser par m. Ça multiplie toutes les eigenvalues par la même constante : les axes et les pourcentages ne changent pas.</p>`,
+  trap:`<b>Principal axes</b> = des directions (les eigenvectors). <b>Principal components</b> = les nouvelles coordonnées des données (la projection C·U). Les questions d'examen aiment cette distinction.` },
+
+{ id:'l2-nonlin', lec:'l2', title:'MDS, Isomap & LLE', en:'non-linear dimensionality reduction', slides:'67–75', demo:'isomap',
+  ess:`<ul>
+  <li>PCA et SVD sont <b>linéaires</b> : elles projettent sur un plan. Si les données vivent sur une surface courbée (le <mark>Swiss roll</mark>), ça ne suffit pas.</li>
+  <li><b>MDS</b> : à partir d'une matrice de distances, place les points en petite dimension en préservant au mieux ces distances (minimise le <b>stress</b>).</li>
+  <li><b>Isomap</b> : MDS avec les distances <mark>géodésiques</mark> (le long de la surface). kNN graph → shortest paths → MDS.</li>
+  <li><b>LLE</b> : chaque point est reconstruit comme combinaison linéaire de ses voisins, et on garde ces mêmes poids en petite dimension.</li></ul>`,
+  deep:`<p><b>Stress</b> (MDS) : mesure l'écart entre δᵢⱼ (distance d'origine) et dᵢⱼ (distance dans le nouvel espace), en gros Σ (δᵢⱼ − dᵢⱼ)². Exemple du cours : retrouver la carte des USA à partir de la matrice des distances entre 10 villes.</p>
+  <p><b>Isomap en 3 étapes</b> : 1) kNN graph ; 2) shortest paths entre tous les nœuds (approximation de la distance géodésique) → matrice D ; 3) MDS sur D.</p>
+  <p><b>LLE en 3 étapes</b> : 1) trouver les K voisins de chaque Xᵢ ; 2) calculer les poids W qui reconstruisent au mieux Xᵢ à partir de ses voisins ; 3) trouver les Yᵢ en petite dimension qui respectent les mêmes poids.</p>
+  <p><b>Récap (slide 75)</b> : linéaires = PCA/SVD, NMF, CUR, LDA (supervised). Non linéaires = MDS, Isomap, LLE.</p>`,
+  trap:`Sur le Swiss roll, deux points peuvent être proches en distance euclidienne mais très loin le long de la surface. Isomap utilise la seconde distance, la PCA ne voit que la première.` },
+
+{ id:'l2-fsel', lec:'l2', title:'Feature selection', en:'filter, wrapper, embedded', slides:'76–82', demo:'fsel',
+  ess:`<ul>
+  <li><b>Feature selection</b> : garder p features d'origine parmi n. Contrairement à la PCA, on ne crée pas de nouvelles features.</li>
+  <li><b>Filter</b> : un score statistique par feature (correlation, χ², information gain). Rapide.</li>
+  <li><b>Wrapper</b> : on cherche le meilleur sous-ensemble en entraînant le modèle (forward/backward search). Précis mais coûteux.</li>
+  <li><b>Embedded</b> : le modèle choisit ses features pendant l'entraînement.</li></ul>`,
+  deep:`<p><b>χ² test</b> : teste l'indépendance entre une feature A et la classe C.</p>
+  <div class="fblock">χ² = Σᵢ Σⱼ ${F('(Oᵢⱼ − Eᵢⱼ)²','Eᵢⱼ')}&nbsp;&nbsp;&nbsp;Eᵢⱼ = ${F('(# valeur i) × (# classe j)','m')}</div>
+  <p>χ² élevé → la feature et la classe sont dépendantes → feature utile.</p>
+  <p><b>Forward search</b> : on part de F = ∅. À chaque étape, on ajoute la feature qui fait le plus baisser l'erreur E(F), et on s'arrête quand plus rien ne s'améliore. Coût O(n² · T) au lieu de O(2ⁿ), T étant le coût d'un entraînement.</p>
+  <p><b>Backward search</b> : on part de toutes les features et on en retire. <b>Floating search</b> : on alterne ajouter q / retirer r.</p>
+  <p>Intérêts : interprétabilité, entraînement plus rapide, moins d'overfitting.</p>`,
+  trap:`Filter = rapide mais ignore le modèle et les interactions entre features. Wrapper = tient compte du modèle mais coûte cher (2ⁿ sous-ensembles possibles).` },
+];
+
+const QUIZ = [
+/* ---- cours 1 ---- */
+{l:'l1',c:'l1-types',q:'Prédire combien de personnes vont cliquer sur une pub demain, c\'est…',o:['Binary classification','Regression','Clustering','Dimensionality reduction'],a:1,e:'La sortie est un nombre continu (un nombre de clics), avec des données labellisées : c\'est une régression. C\'est d\'ailleurs l\'exemple « click prediction » du cours.'},
+{l:'l1',c:'l1-types',q:'Tu veux grouper des clients selon leurs achats, sans aucune étiquette. Quel type de problème ?',o:['Classification','Regression','Clustering','Supervised learning'],a:2,e:'Pas de labels, on cherche des groupes de points similaires : clustering (customer segmentation).'},
+{l:'l1',c:'l1-design',q:'Dans la design matrix X de taille n × p, une ligne représente…',o:['Une feature','Une observation','Un label','Un paramètre du modèle'],a:1,e:'n lignes = n observations (samples). Les p colonnes sont les features.'},
+{l:'l1',c:'l1-erm',q:'Quelle loss est la plus sensible aux outliers ?',o:['0/1 loss','Absolute loss |y − f(x)|','Quadratic loss (y − f(x))²','Elles se valent'],a:2,e:'Le carré amplifie les grosses erreurs : une erreur de 10 coûte 100. L\'absolute loss croît linéairement, donc elle est plus robuste.'},
+{l:'l1',c:'l1-erm',q:'Pourquoi minimise-t-on l\'empirical risk plutôt que le true risk ?',o:['Il est toujours plus petit','La distribution D des données est inconnue','Il est dérivable','Il évite l\'overfitting'],a:1,e:'Le true risk est une espérance sur D, qu\'on ne connaît pas. On l\'estime par la moyenne de la loss sur le training set.'},
+{l:'l1',c:'l1-overfit',q:'Training error 2 %, test error 25 %. Diagnostic ?',o:['Underfitting / high bias','Overfitting / high variance','Le modèle est bon','Le test set est trop grand'],a:1,e:'Training error basse et test error haute : le modèle a appris le bruit du training set. C\'est de l\'overfitting, donc de la high variance.'},
+{l:'l1',c:'l1-biasvar',q:'Training error 30 %, test error 31 %. Diagnostic ?',o:['Overfitting / high variance','Underfitting / high bias','Bruit irréductible nul','Data leakage'],a:1,e:'Les deux erreurs sont élevées et proches : le modèle est trop simple pour capter la structure. High bias → underfitting.'},
+{l:'l1',c:'l1-biasvar',q:'Si on augmente la taille du training set (même modèle), quel terme diminue ?',o:['Le bias','La variance','Le bruit σ²','Aucun'],a:1,e:'Avec plus de données, le modèle change moins d\'un training set à l\'autre : la variance baisse. Le bias ne dépend pas de la taille du training set.'},
+{l:'l1',c:'l1-overfit',q:'Quand la complexité du modèle augmente, la test error…',o:['Diminue toujours','Augmente toujours','Diminue puis augmente (forme en U)','Reste constante'],a:2,e:'Au début, on réduit le bias (la test error baisse), puis la variance prend le dessus (elle remonte). La training error, elle, baisse toujours.'},
+{l:'l1',c:'l1-split',q:'Pourquoi faut-il un test set en plus du validation set ?',o:['Pour avoir plus de données d\'entraînement','Parce que le validation set a servi à choisir le modèle, donc son score est trop optimiste','Pour calculer la training error','Ce n\'est pas nécessaire'],a:1,e:'Choisir le meilleur score de validation revient à « regarder » ces données. Seul un test set jamais utilisé donne une estimation honnête de la generalization error.'},
+{l:'l1',c:'l1-cv',q:'5-fold cross-validation sur n = 1000 points. Chaque modèle est entraîné sur…',o:['200 points','500 points','800 points','1000 points'],a:2,e:'k − 1 = 4 folds de 200 points servent à l\'entraînement : 800 points. Le fold restant (200) sert de validation.'},
+{l:'l1',c:'l1-cv',q:'Quel est le principal inconvénient de la LOOCV ?',o:['Elle est très biaisée','Elle n\'utilise que la moitié des données','Elle demande n entraînements et son estimation a une variance élevée','Elle ne marche que pour la régression'],a:2,e:'k = n : il faut entraîner n modèles, et chaque validation ne porte que sur un point, d\'où une forte variance. En contrepartie, elle est presque sans biais.'},
+{l:'l1',c:'l1-cv',q:'Avec k = 2, l\'estimation de l\'erreur par cross-validation tend à être…',o:['Trop optimiste','Trop pessimiste, car chaque modèle ne voit que n/2 points','Parfaite','Impossible à calculer'],a:1,e:'Chaque modèle est entraîné sur moitié moins de données que le modèle final, donc il est moins bon : l\'erreur est surestimée (biaisée).'},
+{l:'l1',c:'l1-confusion',q:'Un false negative, c\'est…',o:['Prédit +1, vrai −1 (type I)','Prédit −1, vrai +1 (type II)','Prédit −1, vrai −1','Prédit +1, vrai +1'],a:1,e:'« Negative » = le modèle a prédit −1. « False » = il avait tort, donc la vraie classe est +1. C\'est un raté, une type II error.'},
+{l:'l1',c:'l1-confusion',q:'Recall (sensitivity) =',o:['TP / (TP + FP)','TP / (TP + FN)','TN / (TN + FP)','(TP + TN) / total'],a:1,e:'Parmi tous les vrais positifs (TP + FN), la part qu\'on a trouvée. TP / (TP + FP) est la precision.'},
+{l:'l1',c:'l1-confusion',q:'990 négatifs, 10 positifs. Un modèle répond toujours −1. Son accuracy et son recall ?',o:['99 % et 99 %','99 % et 0 %','1 % et 100 %','50 % et 50 %'],a:1,e:'Il a raison sur les 990 négatifs : accuracy = 990/1000 = 99 %. Mais TP = 0, donc recall = 0/10 = 0 %. C\'est l\'accuracy paradox.'},
+{l:'l1',c:'l1-confusion',q:'Pour un dépistage du cancer, quelle métrique faut-il surveiller en priorité ?',o:['Precision','Recall','Specificity','Accuracy'],a:1,e:'Rater un malade (FN) coûte beaucoup plus cher qu\'une fausse alerte, qui sera vérifiée par un autre test. On veut minimiser les FN, donc maximiser le recall.'},
+{l:'l1',c:'l1-confusion',q:'Precision = 0.9, recall = 0.1. Le F1-score vaut environ…',o:['0.5','0.18','0.9','0.1'],a:1,e:'F1 = 2·0.9·0.1 / (0.9 + 0.1) = 0.18 / 1 = 0.18. La moyenne harmonique est tirée vers la valeur la plus faible.'},
+{l:'l1',c:'l1-roc',q:'On baisse le seuil T (on prédit +1 plus facilement). Que deviennent TPR et FPR ?',o:['Les deux augmentent','Les deux baissent','TPR augmente, FPR baisse','Rien ne change'],a:0,e:'Plus de prédictions +1 : on attrape plus de vrais positifs (TPR ↑) mais aussi plus de faux positifs (FPR ↑). Le point remonte le long de la courbe vers (1, 1).'},
+{l:'l1',c:'l1-roc',q:'Un classifier a une AUC de 0.5. Cela signifie…',o:['Il est parfait','Il ne fait pas mieux que le hasard','Il se trompe une fois sur deux sur les positifs seulement','Son seuil est mal choisi'],a:1,e:'AUC = 0.5 correspond à la diagonale : les scores ne séparent pas du tout les deux classes.'},
+{l:'l1',c:'l1-roc',q:'Changer le seuil T d\'un classifier…',o:['Augmente son AUC','Déplace le point de fonctionnement le long de la même ROC curve','Change la forme de la ROC curve','Change f₀ et f₁'],a:1,e:'La courbe représente tous les seuils possibles. Choisir T revient à choisir un point dessus. Seul un meilleur modèle change la courbe.'},
+/* ---- cours 2 ---- */
+{l:'l2',c:'l2-why',q:'Que se passe-t-il avec les distances entre points quand la dimension devient très grande ?',o:['Elles deviennent toutes très différentes','Elles se concentrent : tous les points sont à peu près à la même distance','Elles tendent vers 0','Elles ne changent pas'],a:1,e:'C\'est le curse of dimensionality : le rapport entre la distance au plus proche et la distance au plus lointain tend vers 1. Les méthodes basées sur les distances (nearest neighbors) perdent leur sens.'},
+{l:'l2',c:'l2-rank',q:'Rank de la matrice dont les lignes sont [1 1 1 0 0], [2 2 2 0 0], [0 0 0 1 1] ?',o:['1','2','3','5'],a:1,e:'[2 2 2 0 0] = 2 × [1 1 1 0 0], elle n\'ajoute rien. Il reste 2 lignes indépendantes, donc rank = 2.'},
+{l:'l2',c:'l2-eigen',q:'u est un eigenvector de A si…',o:['Au = 0','Au = λu pour un scalaire λ','AᵀA = I','u est orthogonal à A'],a:1,e:'A ne fait qu\'étirer u (d\'un facteur λ), sans changer sa direction.'},
+{l:'l2',c:'l2-svd',q:'Dans A = UΣVᵀ avec A = users × movies, la matrice V représente…',o:['La similarité user-to-concept','La similarité movie-to-concept','La force des concepts','Les ratings reconstruits'],a:1,e:'V a une ligne par film (n × r) : movie-to-concept. U = user-to-concept, Σ = force de chaque concept.'},
+{l:'l2',c:'l2-svd',q:'Lien entre les singular values de A et les eigenvalues λ de AᵀA ?',o:['σᵢ = λᵢ','σᵢ = λᵢ²','σᵢ = √λᵢ','Aucun lien'],a:2,e:'AᵀA = VΣ²Vᵀ, donc ses eigenvalues sont les σᵢ². Les singular values en sont les racines carrées.'},
+{l:'l2',c:'l2-lowrank',q:'Singular values 12.4, 9.5 et 1.3. Quelle part de l\'energy garde-t-on avec k = 1 ?',o:['12.4 %','≈ 53 %','≈ 63 %','≈ 99 %'],a:2,e:'Energy = σ² : 12.4² = 153.8 ; total = 153.8 + 90.3 + 1.7 = 245.7 ; 153.8 / 245.7 ≈ 62.6 %. Le piège : 53 %, si on oublie les carrés.'},
+{l:'l2',c:'l2-lowrank',q:'La troncature A_k de la SVD est la meilleure approximation de rank k au sens de…',o:['La norme de Frobenius ‖A − A_k‖_F','Le nombre de zéros','L\'accuracy','La 0/1 loss'],a:0,e:'Elle minimise la somme des erreurs de reconstruction au carré, c\'est-à-dire la Frobenius norm de A − A_k.'},
+{l:'l2',c:'l2-pca',q:'Le 1er principal axis de la PCA est…',o:['La moyenne des données','L\'eigenvector de CᵀC qui a la plus grande eigenvalue','La feature qui a la plus grande moyenne','Le vecteur des labels'],a:1,e:'On maximise la variance projetée wᵀΣw avec ‖w‖ = 1 (Rayleigh quotient) : le maximum est λ₁, atteint pour son eigenvector.'},
+{l:'l2',c:'l2-pca',q:'Pourquoi standardiser les features avant une PCA ?',o:['Pour rendre la matrice symétrique','Sinon les features à grande échelle dominent la variance','Pour réduire le nombre d\'observations','Ce n\'est jamais utile'],a:1,e:'La PCA maximise la variance. Une feature mesurée en grandes unités a mécaniquement une grande variance, et PC1 s\'aligne dessus.'},
+{l:'l2',c:'l2-pcaalgo',q:'Eigenvalues 5, 3, 1.5 et 0.5. Combien de composantes pour expliquer au moins 85 % de la variance ?',o:['1','2','3','4'],a:2,e:'Total = 10. k = 1 : 50 %. k = 2 : 80 %. k = 3 : 95 % ≥ 85 %. Donc k = 3.'},
+{l:'l2',c:'l2-pcaalgo',q:'Les « principal components », ce sont…',o:['Les eigenvectors de Σ','Les eigenvalues de Σ','Les données projetées C · U[1…k]','Les moyennes des colonnes'],a:2,e:'Principal axes = les directions (eigenvectors). Principal components = les nouvelles coordonnées des données sur ces axes.'},
+{l:'l2',c:'l2-pca',q:'La PCA est une méthode…',o:['Supervised, elle utilise les labels','Unsupervised, elle ne regarde que X','Semi-supervised','De classification'],a:1,e:'La PCA ne regarde que la variance des données, jamais les labels. C\'est le cas aussi de la SVD, de MDS et d\'Isomap. LDA, elle, est supervised.'},
+{l:'l2',c:'l2-nonlin',q:'Quelle distance Isomap cherche-t-elle à préserver ?',o:['La distance euclidienne directe','La distance géodésique, estimée par les shortest paths dans un kNN graph','La correlation','La distance de Manhattan'],a:1,e:'Isomap construit un kNN graph, calcule les plus courts chemins (≈ distance le long de la surface), puis applique MDS.'},
+{l:'l2',c:'l2-fsel',q:'Forward search parmi n features : coût par rapport à la recherche exhaustive ?',o:['O(n² · T) au lieu de O(2ⁿ)','O(2ⁿ) dans les deux cas','O(n) au lieu de O(n²)','Identique'],a:0,e:'Au plus n étapes, chacune teste au plus n features : n² entraînements de coût T. La recherche exhaustive teste 2ⁿ sous-ensembles.'},
+{l:'l2',c:'l2-fsel',q:'Un χ² élevé entre une feature et la classe signifie…',o:['La feature est indépendante de la classe','La feature et la classe sont dépendantes, donc la feature est utile','La feature est bruitée','Il faut la supprimer'],a:1,e:'Le χ² mesure l\'écart entre les fréquences observées et celles attendues sous indépendance. Un grand écart signale une dépendance.'},
+{l:'l2',c:'l2-fsel',q:'Différence clé entre feature selection et PCA ?',o:['Aucune','La feature selection garde des features d\'origine, la PCA crée des combinaisons','La PCA est supervised','La feature selection augmente la dimension'],a:1,e:'La PCA fait de la feature extraction : chaque composante combine toutes les features. La selection garde des colonnes d\'origine, donc plus interprétables.'},
+];
+
+const FORMULAS = [
+ {t:'Apprentissage supervisé', rows:[
+  ['Empirical risk','R̂(f) = (1/n) Σᵢ L(yᵢ, f(xᵢ))'],
+  ['True risk','R(f) = E_(x,y)~D [ L(y, f(x)) ]'],
+  ['ERM','f̂ = argmin_{f ∈ F} R̂(f)'],
+  ['Quadratic loss','(y − f(x))²'],
+  ['Absolute loss','|y − f(x)|'],
+  ['0/1 loss','1 si f(x) ≠ y, sinon 0'],
+  ['Bias–variance','E[(y − f̂)²] = Bias² + Variance + σ²'],
+ ]},
+ {t:'Évaluation (classification)', rows:[
+  ['Recall = Sensitivity = TPR','TP / (TP + FN)'],
+  ['Specificity = TNR','TN / (TN + FP)'],
+  ['Precision = PPV','TP / (TP + FP)'],
+  ['FDR','FP / (TP + FP) = 1 − precision'],
+  ['FPR','FP / (FP + TN) = 1 − specificity'],
+  ['Accuracy','(TP + TN) / (TP + TN + FP + FN)'],
+  ['F1-score','2 · P · R / (P + R)'],
+  ['Type I / Type II','FP = type I (fausse alarme) · FN = type II (raté)'],
+ ]},
+ {t:'Cross-validation', rows:[
+  ['k-fold','k entraînements, chacun sur n(k−1)/k points'],
+  ['LOOCV','k = n'],
+ ]},
+ {t:'Algèbre linéaire', rows:[
+  ['Eigenvector','A u = λ u   ⇔   det(A − λI) = 0'],
+  ['Symétrique','A = U Λ Uᵀ'],
+  ['Orthogonal','QᵀQ = QQᵀ = I'],
+  ['SVD','A = U Σ Vᵀ = Σᵢ σᵢ uᵢ vᵢᵀ'],
+  ['SVD ↔ eigen','U = eigvec(AAᵀ), V = eigvec(AᵀA), σᵢ = √λᵢ'],
+  ['Rank','r = # σᵢ non nulles ≤ min(m, n)'],
+  ['Frobenius','‖A‖_F = √(Σᵢⱼ aᵢⱼ²)'],
+  ['Erreur rank k','‖A − A_k‖_F² = Σ_{i>k} σᵢ²'],
+  ['Energy gardée','(σ₁² + … + σₖ²) / Σ σᵢ²  → 80–90 %'],
+ ]},
+ {t:'PCA', rows:[
+  ['Centrage','C = X − M'],
+  ['Covariance','Σ = CᵀC'],
+  ['Variance projetée','Var(Xw) ∝ wᵀ Σ w,  ‖w‖ = 1'],
+  ['Principal axes','eigenvectors de Σ (λ décroissantes)'],
+  ['Principal components','C · U[1…k]'],
+  ['Variance expliquée','(λ₁ + … + λₖ) / (λ₁ + … + λₙ)  → ≈ 85 %'],
+  ['Standardisation','x′ = (x − μ) / σ'],
+ ]},
+ {t:'Feature selection', rows:[
+  ['χ²','Σᵢ Σⱼ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ'],
+  ['Effectif attendu','Eᵢⱼ = (# valeur i) × (# classe j) / m'],
+  ['Sous-ensembles','2ⁿ (exhaustif) vs O(n² · T) (forward)'],
+ ]},
+];
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+function rng(seed) { let s = (seed >>> 0) || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
+function randn(r) { let u = 0; while (u === 0) u = r(); const v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function erf(x) { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; }
+const Phi = x => 0.5 * (1 + erf(x / Math.SQRT2));
+const gpdf = (x, m) => Math.exp(-0.5 * (x - m) ** 2) / Math.sqrt(2 * Math.PI);
+const fmt = (x, d = 2) => { if (!isFinite(x)) return '—'; const v = Math.abs(x) < 0.5 * 10 ** -d ? 0 : x; return v.toFixed(d); };
+const pct = (x, d = 1) => isFinite(x) ? (x * 100).toFixed(d) + ' %' : '—';
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0) * (r1 - r0);
+const logsc = (d0, d1, r0, r1) => v => r0 + (Math.log10(Math.max(v, d0 * 0.5)) - Math.log10(d0)) / (Math.log10(d1) - Math.log10(d0)) * (r1 - r0);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function slider(id, label, min, max, step, val) {
+  return `<label class="ctl" for="${id}"><span>${label}</span><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"><output id="${id}-o"></output></label>`;
+}
+function bindSlider(el, id, fmtFn, cb) {
+  const inp = $('#' + id, el), out = $('#' + id + '-o', el);
+  const go = () => { out.textContent = fmtFn(+inp.value); cb(+inp.value); };
+  inp.addEventListener('input', go); return { inp, go, set(v) { inp.value = v; go(); } };
+}
+function axesSVG(o) {
+  // o: {W,H,m:{l,r,t,b}, sx, sy, xt:[..], yt:[..], fx, fy, xlab, ylab}
+  const { W, H, m, sx, sy } = o; let s = '';
+  (o.yt || []).forEach(v => { const y = sy(v); s += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}"/><text x="${m.l - 6}" y="${y + 3.5}" text-anchor="end">${(o.fy || String)(v)}</text>`; });
+  (o.xt || []).forEach(v => { const x = sx(v); s += `<line class="grid" y1="${m.t}" y2="${H - m.b}" x1="${x}" x2="${x}" opacity=".5"/><text x="${x}" y="${H - m.b + 15}" text-anchor="middle">${(o.fx || String)(v)}</text>`; });
+  s += `<line class="ax" x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}"/><line class="ax" x1="${m.l}" x2="${m.l}" y1="${m.t}" y2="${H - m.b}"/>`;
+  if (o.xlab) s += `<text x="${(m.l + W - m.r) / 2}" y="${H - 4}" text-anchor="middle">${o.xlab}</text>`;
+  if (o.ylab) s += `<text transform="translate(12 ${(m.t + H - m.b) / 2}) rotate(-90)" text-anchor="middle">${o.ylab}</text>`;
+  return s;
+}
+const pathOf = pts => pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+
+/* ---------- linear algebra ---------- */
+const Tr = A => A[0].map((_, j) => A.map(r => r[j]));
+const mm = (A, B) => A.map(r => B[0].map((_, j) => r.reduce((s, v, k) => s + v * B[k][j], 0)));
+function jacobi(S) {
+  const n = S.length, A = S.map(r => r.slice()), V = S.map((_, i) => S.map((_, j) => +(i === j)));
+  for (let sw = 0; sw < 80; sw++) {
+    let off = 0; for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += A[p][q] ** 2;
+    if (off < 1e-20) break;
+    for (let p = 0; p < n - 1; p++) for (let q = p + 1; q < n; q++) {
+      if (Math.abs(A[p][q]) < 1e-18) continue;
+      const th = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+      const t = (th >= 0 ? 1 : -1) / (Math.abs(th) + Math.sqrt(th * th + 1));
+      const c = 1 / Math.sqrt(t * t + 1), s = t * c;
+      for (let k = 0; k < n; k++) { const a = A[k][p], b = A[k][q]; A[k][p] = c * a - s * b; A[k][q] = s * a + c * b; }
+      for (let k = 0; k < n; k++) { const a = A[p][k], b = A[q][k]; A[p][k] = c * a - s * b; A[q][k] = s * a + c * b; }
+      for (let k = 0; k < n; k++) { const a = V[k][p], b = V[k][q]; V[k][p] = c * a - s * b; V[k][q] = s * a + c * b; }
+    }
+  }
+  const idx = [...Array(n).keys()].sort((i, j) => A[j][j] - A[i][i]);
+  return { vals: idx.map(i => A[i][i]), vecs: idx.map(i => V.map(r => r[i])) }; // vecs[i] = i-th eigenvector
+}
+function signFix(v) { const s = v.reduce((a, b) => a + b, 0); let sg = s; if (Math.abs(s) < 1e-9) { sg = v.reduce((a, b) => Math.abs(b) > Math.abs(a) ? b : a, 0); } return sg < 0 ? v.map(x => -x) : v; }
+function svd(A) {
+  const { vals, vecs } = jacobi(mm(Tr(A), A));
+  const out = { s: [], U: [], V: [] };
+  vals.forEach((l, i) => {
+    const s = Math.sqrt(Math.max(l, 0)); if (s < 1e-7) return;
+    const v = signFix(vecs[i]); const u = A.map(r => r.reduce((t, x, k) => t + x * v[k], 0) / s);
+    out.s.push(s); out.V.push(v); out.U.push(u);
+  });
+  return out; // U[i], V[i] are vectors
+}
+function rankOf(M) {
+  const A = M.map(r => r.slice()), m = A.length, n = A[0].length; let r = 0;
+  const scale = Math.max(1, ...A.flat().map(Math.abs));
+  for (let c = 0; c < n && r < m; c++) {
+    let p = r; for (let i = r + 1; i < m; i++) if (Math.abs(A[i][c]) > Math.abs(A[p][c])) p = i;
+    if (Math.abs(A[p][c]) < 1e-9 * scale) continue;
+    [A[r], A[p]] = [A[p], A[r]];
+    for (let i = r + 1; i < m; i++) { const f = A[i][c] / A[r][c]; for (let j = c; j < n; j++) A[i][j] -= f * A[r][j]; }
+    r++;
+  }
+  return r;
+}
+function solve(M, b) {
+  const n = b.length, A = M.map((r, i) => [...r, b[i]]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let i = c + 1; i < n; i++) if (Math.abs(A[i][c]) > Math.abs(A[p][c])) p = i;
+    [A[c], A[p]] = [A[p], A[c]]; const d = A[c][c] || 1e-12;
+    for (let i = c + 1; i < n; i++) { const f = A[i][c] / d; for (let j = c; j <= n; j++) A[i][j] -= f * A[c][j]; }
+  }
+  const x = Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) { let s = A[i][n]; for (let j = i + 1; j < n; j++) s -= A[i][j] * x[j]; x[i] = s / (A[i][i] || 1e-12); }
+  return x;
+}
+// polynomial regression in Chebyshev basis (well conditioned on [-1,1])
+function cheb(x, deg) { const t = [1, x]; for (let k = 2; k <= deg; k++) t.push(2 * x * t[k - 1] - t[k - 2]); return t.slice(0, deg + 1); }
+function polyfit(xs, ys, deg) {
+  const P = xs.map(x => cheb(x, deg)), k = deg + 1;
+  const G = Array.from({ length: k }, (_, i) => Array.from({ length: k }, (_, j) => P.reduce((s, r) => s + r[i] * r[j], 0) + (i === j ? 1e-10 : 0)));
+  const b = Array.from({ length: k }, (_, i) => P.reduce((s, r, n) => s + r[i] * ys[n], 0));
+  const c = solve(G, b); return x => cheb(x, deg).reduce((s, v, i) => s + v * c[i], 0);
+}
+const mse = (f, xs, ys) => xs.reduce((s, x, i) => s + (f(x) - ys[i]) ** 2, 0) / xs.length;
+
+function matHTML(M, opt = {}) {
+  const d = opt.d ?? 2, cols = M[0].length, max = opt.max ?? Math.max(1e-9, ...M.flat().map(Math.abs));
+  const cells = M.flat().map((v, i) => {
+    const r = Math.floor(i / cols), c = i % cols; let st = '';
+    if (opt.heat) { const a = Math.round(Math.min(1, Math.abs(v) / max) * 70); st = `background:color-mix(in srgb, var(${v >= 0 ? '--accent' : '--pos'}) ${a}%, transparent)`; }
+    const hl = opt.hl && opt.hl(r, c) ? 'outline:2px solid var(--hl);outline-offset:-1px;' : '';
+    return `<span style="${hl}${st}">${fmt(v, d)}</span>`;
+  }).join('');
+  return `<div><div class="mat" style="grid-template-columns:repeat(${cols},auto)">${cells}</div>${opt.cap ? `<div class="mat-cap">${opt.cap}</div>` : ''}</div>`;
+}
+const DEMOS = {};
+
+/* ---------- types : trieur de scénarios ---------- */
+DEMOS.types = { hint: 'Lis le scénario et choisis le type de problème. 11 scénarios, tous tirés des exemples du cours.', mount(el) {
+  const T = ['Classification', 'Regression', 'Clustering', 'Dimensionality reduction'];
+  const S = [
+    ['Détecter si un email est un spam.', 0, 'Sortie discrète (spam / pas spam) et des emails déjà labellisés : binary classification.'],
+    ['Prédire le prix d\'un appartement à partir de sa surface et de son quartier.', 1, 'Le prix est une valeur continue : regression.'],
+    ['Regrouper des articles de presse par sujet, sans catégories définies à l\'avance.', 2, 'Pas de labels, on cherche des groupes : clustering (topic modeling).'],
+    ['Afficher sur un graphique 2D des clients décrits par 500 variables.', 3, 'On passe de 500 à 2 dimensions pour visualiser : dimensionality reduction.'],
+    ['Reconnaître le chiffre manuscrit (0 à 9) sur une image.', 0, 'Sortie dans {0, …, 9} : multiclass classification.'],
+    ['Estimer combien d\'utilisateurs seront connectés à 18h.', 1, 'Un nombre à prédire, c\'est la « load prediction » du cours : regression.'],
+    ['Trouver des sous-types de patients aux symptômes similaires.', 2, 'Disease subtyping : on groupe sans labels, donc clustering.'],
+    ['Compresser une matrice users × films de 10⁶ × 10³ en gardant l\'essentiel.', 3, 'On cherche une représentation plus petite : dimensionality reduction (SVD, cours 2).'],
+    ['Dire si un patient est malade à partir de sa prise de sang.', 0, 'Malade / sain : binary classification (precision medicine).'],
+    ['Prédire le cours d\'une action demain.', 1, 'Un prix continu : regression (algorithmic trading).'],
+    ['Identifier des communautés d\'utilisateurs dans un réseau social.', 2, 'Community detection : clustering.'],
+  ];
+  let i = 0, score = 0, answered = false;
+  el.innerHTML = `<div class="row" style="justify-content:space-between;margin-bottom:8px"><span class="eyebrow" data-n></span><span class="pill" data-s></span></div>
+    <div class="sorter-q" data-q></div><div class="q-opts" data-o></div><div class="q-exp" data-e hidden></div>
+    <div class="row" style="margin-top:12px"><button class="btn pri sm" data-next hidden>Scénario suivant</button></div>`;
+  const draw = () => {
+    answered = false; const [q] = S[i];
+    $('[data-n]', el).textContent = `Scénario ${i + 1} / ${S.length}`; $('[data-s]', el).textContent = `${score} bonne${score > 1 ? 's' : ''} réponse${score > 1 ? 's' : ''}`;
+    $('[data-q]', el).textContent = q; $('[data-e]', el).hidden = true; $('[data-next]', el).hidden = true;
+    $('[data-o]', el).innerHTML = T.map((t, k) => `<button class="q-opt" data-k="${k}"><span class="k">${'ABCD'[k]}</span><span>${t}</span></button>`).join('');
+  };
+  $('[data-o]', el).addEventListener('click', e => {
+    const b = e.target.closest('.q-opt'); if (!b || answered) return; answered = true;
+    const k = +b.dataset.k, [, a, ex] = S[i]; if (k === a) score++;
+    $$('.q-opt', el).forEach(x => { x.disabled = true; if (+x.dataset.k === a) x.classList.add('right'); else if (x === b) x.classList.add('wrong'); });
+    const e2 = $('[data-e]', el); e2.hidden = false; e2.innerHTML = `<b>${k === a ? 'Oui.' : 'Non.'}</b> ${ex}`;
+    $('[data-s]', el).textContent = `${score} bonne${score > 1 ? 's' : ''} réponse${score > 1 ? 's' : ''}`;
+    const nx = $('[data-next]', el); nx.hidden = false; nx.textContent = i === S.length - 1 ? 'Recommencer' : 'Scénario suivant';
+  });
+  $('[data-next]', el).addEventListener('click', () => { i++; if (i >= S.length) { i = 0; score = 0; } draw(); });
+  draw();
+}};
+
+/* ---------- design matrix ---------- */
+DEMOS.design = { hint: 'Clique sur une case du tableau pour voir comment on la nomme.', mount(el) {
+  const feats = ['Size (cm)', 'Pointy ears', 'Good eater', 'Human contact'];
+  const X = [[30, 1, 4, 3], [62, 0, 9, 9], [25, 1, 3, 2], [48, 1, 8, 8], [70, 0, 7, 9], [28, 1, 5, 4]];
+  const y = [-1, 1, -1, 1, 1, -1];
+  let sel = [2, 1];
+  el.innerHTML = `<div class="tbl-wrap"><table class="dm" data-t></table></div><div class="callout" data-c></div>
+    <div class="stat"><div><small>n (observations)</small><b>6</b></div><div><small>p (features)</small><b>4</b></div><div><small>Taille de X</small><b>6 × 4</b></div><div><small>Taille de y</small><b>6</b></div></div>`;
+  const draw = () => {
+    const [r, c] = sel;
+    let s = `<tr><th></th>${feats.map((f, j) => `<th class="${j === c ? 'sel-c' : ''}">x<sub>·${j + 1}</sub> ${f}</th>`).join('')}<th class="${c === 4 ? 'sel-c' : ''}" style="border-left:3px solid var(--muted)">y (label)</th></tr>`;
+    X.forEach((row, i) => {
+      s += `<tr><th class="${i === r ? 'sel-r' : ''}">x<sub>${i + 1}</sub></th>` + row.map((v, j) => `<td data-r="${i}" data-c="${j}" class="${i === r ? 'sel-r' : ''} ${j === c ? 'sel-c' : ''}" style="cursor:pointer">${v}</td>`).join('') +
+        `<td data-r="${i}" data-c="4" class="${i === r ? 'sel-r' : ''} ${c === 4 ? 'sel-c' : ''}" style="cursor:pointer;border-left:3px solid var(--muted)">${y[i] > 0 ? '+1 chien' : '−1 chat'}</td></tr>`;
+    });
+    $('[data-t]', el).innerHTML = s;
+    $('[data-c]', el).innerHTML = c === 4
+      ? `<b>y<sub>${r + 1}</sub> = ${y[r] > 0 ? '+1' : '−1'}</b> : le label de l'observation ${r + 1}. C'est ce que le modèle doit apprendre à prédire.`
+      : `<b>x<sub>${r + 1},${c + 1}</sub> = ${X[r][c]}</b> : la valeur de la feature ${c + 1} (« ${feats[c]} ») pour l'observation ${r + 1}. La ligne en bleu est le vecteur <b>x<sub>${r + 1}</sub></b> (un animal) ; la colonne en rouge est une feature (mesurée sur tous les animaux).`;
+  };
+  $('[data-t]', el).addEventListener('click', e => { const td = e.target.closest('td'); if (!td) return; sel = [+td.dataset.r, +td.dataset.c]; draw(); });
+  draw();
+}};
+
+/* ---------- loss functions ---------- */
+DEMOS.loss = { hint: 'Trois erreurs de prédiction sont petites. Déplace la quatrième pour en faire un outlier et regarde son poids dans chaque loss.', mount(el) {
+  el.innerHTML = slider('ls-e', 'Erreur du point 4 (y − f(x))', -4, 4, 0.1, 3) + `<div class="grid2" style="margin-top:12px"><svg class="plot" viewBox="0 0 360 250" data-p></svg><div data-s></div></div>`;
+  const base = [0.5, -0.3, 0.2];
+  const W = 360, H = 250, m = { l: 34, r: 10, t: 10, b: 30 }, sx = lin(-4, 4, m.l, W - m.r), sy = lin(0, 6, H - m.b, m.t);
+  const L = { q: e => e * e, a: e => Math.abs(e), z: e => Math.abs(e) > 1e-9 ? 1 : 0 };
+  const curve = f => { const p = []; for (let e = -4; e <= 4.001; e += 0.05) p.push([sx(e), sy(Math.min(f(e), 6.4))]); return pathOf(p); };
+  const draw = e4 => {
+    const errs = [...base, e4];
+    let s = `<defs><clipPath id="ls-clip"><rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}"/></clipPath></defs>`;
+    s += axesSVG({ W, H, m, sx, sy, xt: [-4, -2, 0, 2, 4], yt: [0, 2, 4, 6], xlab: 'erreur y − f(x)', ylab: 'loss' });
+    s += `<g clip-path="url(#ls-clip)"><path d="${curve(L.q)}" fill="none" stroke="var(--pos)" stroke-width="2.2"/><path d="${curve(L.a)}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>
+      <path d="M${sx(-4)} ${sy(1)}H${sx(4)}" fill="none" stroke="var(--ok)" stroke-width="2" stroke-dasharray="5 4"/><circle cx="${sx(0)}" cy="${sy(0)}" r="3" fill="var(--ok)"/>`;
+    errs.forEach((e, i) => { const big = i === 3; s += `<circle cx="${sx(e)}" cy="${sy(Math.min(L.q(e), 6.2))}" r="${big ? 5 : 3.5}" fill="var(--pos)"/><circle cx="${sx(e)}" cy="${sy(L.a(e))}" r="${big ? 5 : 3.5}" fill="var(--accent)"/>`; });
+    s += `</g><text x="${sx(-3.9)}" y="${sy(5.6)}" style="fill:var(--pos)">quadratic</text><text x="${sx(-3.9)}" y="${sy(3.4)}" style="fill:var(--accent)">absolute</text><text x="${sx(1.6)}" y="${sy(1) - 6}" style="fill:var(--ok)">0/1</text>`;
+    $('[data-p]', el).innerHTML = s;
+    const tot = f => errs.reduce((a, e) => a + f(e), 0), share = f => f(e4) / (tot(f) || 1);
+    $('[data-s]', el).innerHTML = `<div class="metrics">
+      <div class="metric"><span><span class="nm" style="color:var(--pos)">Quadratic</span><span class="al">Σ (y − f(x))² = ${fmt(tot(L.q))}</span></span><span class="val">${pct(share(L.q), 0)}</span></div>
+      <div class="metric"><span><span class="nm" style="color:var(--accent)">Absolute</span><span class="al">Σ |y − f(x)| = ${fmt(tot(L.a))}</span></span><span class="val">${pct(share(L.a), 0)}</span></div>
+      <div class="metric"><span><span class="nm" style="color:var(--ok)">0/1</span><span class="al">nombre d'erreurs = ${tot(L.z)}</span></span><span class="val">${pct(share(L.z), 0)}</span></div></div>
+      <p class="small muted" style="margin:10px 0 0">Pourcentage = part du point 4 dans la loss totale. Avec la quadratic loss, un seul outlier peut peser presque tout : le modèle va se tordre pour lui.</p>`;
+  };
+  bindSlider(el, 'ls-e', v => fmt(v, 1), draw).go();
+}};
+
+/* ---------- overfitting ---------- */
+const TRUEF = x => 0.9 * Math.sin(2.6 * x) + 0.3 * x;
+function makeSet(r, n, sd, grid) { const xs = [], ys = []; for (let i = 0; i < n; i++) { const x = grid ? -1 + 2 * (i + 0.5) / n + (r() - 0.5) * 0.08 : r() * 2 - 1; xs.push(x); ys.push(TRUEF(x) + sd * randn(r)); } return { xs, ys }; }
+DEMOS.overfit = { hint: 'Augmente le degré du polynôme (la complexité du modèle). Regarde la courbe rouge, puis les deux erreurs à droite.', mount(el) {
+  let seed = 7, tr, te, errs;
+  el.innerHTML = slider('of-d', 'Degré du polynôme', 0, 11, 1, 3) +
+    `<div class="row" style="margin:6px 0 12px"><button class="btn sm" data-new>Nouveau tirage des données</button><span class="small muted">12 points d'entraînement · 200 points de test</span></div>
+    <div class="grid2"><svg class="plot" viewBox="0 0 360 260" data-f></svg><svg class="plot" viewBox="0 0 360 260" data-e></svg></div><div class="callout" data-c></div>`;
+  const W = 360, H = 260, m = { l: 36, r: 10, t: 10, b: 32 };
+  const gen = () => { const r = rng(seed); tr = makeSet(r, 12, 0.3, true); te = makeSet(r, 200, 0.3, false);
+    errs = []; for (let d = 0; d <= 11; d++) { const f = polyfit(tr.xs, tr.ys, d); errs.push([mse(f, tr.xs, tr.ys), mse(f, te.xs, te.ys)]); } };
+  const draw = d => {
+    const f = polyfit(tr.xs, tr.ys, d);
+    const sx = lin(-1.05, 1.05, m.l, W - m.r), sy = lin(-2.4, 2.4, H - m.b, m.t);
+    let s = `<defs><clipPath id="of-clip"><rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}"/></clipPath></defs>` + axesSVG({ W, H, m, sx, sy, xt: [-1, 0, 1], yt: [-2, 0, 2], xlab: 'x', ylab: 'y' });
+    te.xs.forEach((x, i) => s += `<circle cx="${sx(x)}" cy="${sy(te.ys[i])}" r="2" fill="var(--muted)" opacity=".3"/>`);
+    const P = [], Q = []; for (let x = -1.05; x <= 1.05; x += 0.01) { P.push([sx(x), sy(TRUEF(x))]); Q.push([sx(x), sy(clamp(f(x), -3, 3))]); }
+    s += `<g clip-path="url(#of-clip)"><path d="${pathOf(P)}" fill="none" stroke="var(--muted)" stroke-dasharray="4 4" stroke-width="1.5"/><path d="${pathOf(Q)}" fill="none" stroke="var(--pos)" stroke-width="2.4"/></g>`;
+    tr.xs.forEach((x, i) => s += `<circle cx="${sx(x)}" cy="${sy(tr.ys[i])}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/>`);
+    s += `<text x="${m.l + 6}" y="${m.t + 12}">● train   ∙ test   - - vraie fonction</text>`;
+    $('[data-f]', el).innerHTML = s;
+    const ex = lin(0, 11, m.l + 6, W - m.r - 6), ey = logsc(0.003, 10, H - m.b, m.t);
+    let e = axesSVG({ W, H, m, sx: ex, sy: ey, xt: [0, 2, 4, 6, 8, 10], yt: [0.01, 0.1, 1, 10], xlab: 'complexité (degré)', ylab: 'MSE (échelle log)' });
+    const line = k => pathOf(errs.map((v, i) => [ex(i), ey(clamp(v[k], 0.003, 10))]));
+    e += `<line x1="${ex(d)}" x2="${ex(d)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--hl)" stroke-width="3" opacity=".7"/>`;
+    e += `<path d="${line(0)}" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="${line(1)}" fill="none" stroke="var(--pos)" stroke-width="2"/>`;
+    errs.forEach((v, i) => e += `<circle cx="${ex(i)}" cy="${ey(clamp(v[0], 0.003, 10))}" r="2.5" fill="var(--accent)"/><circle cx="${ex(i)}" cy="${ey(clamp(v[1], 0.003, 10))}" r="2.5" fill="var(--pos)"/>`);
+    e += `<text x="${W - m.r - 4}" y="${m.t + 12}" text-anchor="end" style="fill:var(--pos)">test error</text><text x="${W - m.r - 4}" y="${m.t + 26}" text-anchor="end" style="fill:var(--accent)">training error</text>`;
+    $('[data-e]', el).innerHTML = e;
+    const best = errs.reduce((b, v, i) => v[1] < errs[b][1] ? i : b, 0), [trE, teE] = errs[d];
+    let msg = d < best - 1 ? `<b>Underfitting.</b> Le modèle est trop simple : les deux erreurs sont élevées.` : d > best + 2 ? `<b>Overfitting.</b> Training error ${fmt(trE, 3)}, test error ${fmt(teE, 3)} : la courbe passe près des points bleus mais ne suit plus la vraie fonction.` : `<b>Bonne zone.</b> On est proche du minimum de la test error (degré ${best} sur ce tirage).`;
+    $('[data-c]', el).innerHTML = msg; $('[data-c]', el).className = 'callout' + (d >= best - 1 && d <= best + 2 ? ' ok' : '');
+  };
+  const sl = bindSlider(el, 'of-d', v => v, draw);
+  $('[data-new]', el).addEventListener('click', () => { seed = (seed * 31 + 11) % 99991; gen(); sl.go(); });
+  gen(); sl.go();
+}};
+
+/* ---------- bias-variance ---------- */
+DEMOS.biasvar = { hint: 'On entraîne le même modèle sur 25 training sets différents (chaque courbe fine = un modèle). Change la complexité.', mount(el) {
+  const NS = 25, grid = []; for (let x = -0.9; x <= 0.901; x += 0.03) grid.push(x);
+  const sd = 0.35, sets = []; const r = rng(42); for (let k = 0; k < NS; k++) sets.push(makeSet(r, 15, sd, false));
+  const res = []; for (let d = 0; d <= 9; d++) {
+    const fs = sets.map(s => polyfit(s.xs, s.ys, d)); const preds = fs.map(f => grid.map(f));
+    const mean = grid.map((_, j) => preds.reduce((a, p) => a + p[j], 0) / NS);
+    const b2 = grid.reduce((a, x, j) => a + (mean[j] - TRUEF(x)) ** 2, 0) / grid.length;
+    const vr = grid.reduce((a, _, j) => a + preds.reduce((t, p) => t + (p[j] - mean[j]) ** 2, 0) / NS, 0) / grid.length;
+    res.push({ preds, mean, b2, vr });
+  }
+  el.innerHTML = slider('bv-d', 'Complexité (degré)', 0, 9, 1, 1) + `<div class="grid2" style="margin-top:12px"><svg class="plot" viewBox="0 0 360 260" data-f></svg><svg class="plot" viewBox="0 0 360 260" data-e></svg></div><div class="stat" data-s></div>`;
+  const W = 360, H = 260, m = { l: 36, r: 10, t: 10, b: 32 };
+  const draw = d => {
+    const R = res[d], sx = lin(-1, 1, m.l, W - m.r), sy = lin(-2.2, 2.2, H - m.b, m.t);
+    let s = `<defs><clipPath id="bv-clip"><rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}"/></clipPath></defs>` + axesSVG({ W, H, m, sx, sy, xt: [-1, 0, 1], yt: [-2, 0, 2], xlab: 'x', ylab: 'y' }) + '<g clip-path="url(#bv-clip)">';
+    R.preds.forEach(p => s += `<path d="${pathOf(p.map((v, j) => [sx(grid[j]), sy(clamp(v, -3, 3))]))}" fill="none" stroke="var(--pos)" stroke-width="1" opacity=".28"/>`);
+    s += `<path d="${pathOf(grid.map(x => [sx(x), sy(TRUEF(x))]))}" fill="none" stroke="var(--ink)" stroke-dasharray="5 4" stroke-width="1.8"/>`;
+    s += `<path d="${pathOf(R.mean.map((v, j) => [sx(grid[j]), sy(v)]))}" fill="none" stroke="var(--accent)" stroke-width="3"/></g>`;
+    s += `<text x="${m.l + 6}" y="${m.t + 12}">— moyenne des modèles  - - vérité  ─ 25 modèles</text>`;
+    $('[data-f]', el).innerHTML = s;
+    const ex = lin(0, 9, m.l + 6, W - m.r - 6), ey = logsc(0.001, 3, H - m.b, m.t);
+    let e = axesSVG({ W, H, m, sx: ex, sy: ey, xt: [0, 3, 6, 9], yt: [0.001, 0.01, 0.1, 1], fy: v => v, xlab: 'complexité (degré)', ylab: 'échelle log' });
+    e += `<line x1="${ex(d)}" x2="${ex(d)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--hl)" stroke-width="3" opacity=".7"/>`;
+    const L = (f, c, w = 2, da = '') => `<path d="${pathOf(res.map((v, i) => [ex(i), ey(clamp(f(v), 0.001, 3))]))}" fill="none" stroke="${c}" stroke-width="${w}" ${da}/>`;
+    e += L(v => v.b2, 'var(--accent)') + L(v => v.vr, 'var(--pos)') + L(v => v.b2 + v.vr + sd * sd, 'var(--ink)', 2.4, 'stroke-dasharray="6 3"');
+    e += `<text x="${W - m.r - 4}" y="${m.t + 12}" text-anchor="end" style="fill:var(--ink)">erreur totale</text><text x="${W - m.r - 4}" y="${m.t + 26}" text-anchor="end" style="fill:var(--accent)">bias²</text><text x="${W - m.r - 4}" y="${m.t + 40}" text-anchor="end" style="fill:var(--pos)">variance</text>`;
+    $('[data-e]', el).innerHTML = e;
+    $('[data-s]', el).innerHTML = `<div><small>Bias²</small><b style="color:var(--accent)">${fmt(R.b2, 3)}</b></div><div><small>Variance</small><b style="color:var(--pos)">${fmt(R.vr, 3)}</b></div><div><small>Bruit σ²</small><b>${fmt(sd * sd, 3)}</b></div><div><small>Erreur attendue</small><b>${fmt(R.b2 + R.vr + sd * sd, 3)}</b></div>`;
+  };
+  bindSlider(el, 'bv-d', v => v, draw).go();
+}};
+
+/* ---------- split : le piège du validation set ---------- */
+DEMOS.split = { hint: 'Tous ces modèles ont exactement la même vraie accuracy : 70 %. On garde celui qui a le meilleur score de validation. Que vaut-il vraiment ?', mount(el) {
+  let seed = 3;
+  el.innerHTML = slider('sp-k', 'Modèles comparés', 1, 40, 1, 20) + slider('sp-n', 'Taille du validation set', 20, 500, 10, 50) +
+    `<div class="row" style="margin:6px 0 10px"><button class="btn sm" data-new>Relancer</button></div><svg class="plot" viewBox="0 0 640 220" data-p></svg><div class="stat" data-s></div><div class="callout" data-c></div>`;
+  const binom = (r, n, p) => { let k = 0; for (let i = 0; i < n; i++) if (r() < p) k++; return k / n; };
+  const draw = () => {
+    const K = +$('#sp-k', el).value, N = +$('#sp-n', el).value, r = rng(seed * 977 + K * 13 + N);
+    const v = Array.from({ length: K }, () => binom(r, N, 0.7)); const b = v.indexOf(Math.max(...v)); const test = binom(r, 2000, 0.7);
+    const W = 640, H = 220, m = { l: 40, r: 10, t: 10, b: 26 }, sy = lin(0.45, 0.95, H - m.b, m.t), bw = (W - m.l - m.r) / 40;
+    let s = axesSVG({ W, H, m, sx: x => x, sy, yt: [0.5, 0.6, 0.7, 0.8, 0.9], fy: v => (v * 100).toFixed(0) + '%' });
+    v.forEach((a, i) => { const x = m.l + i * bw + 2; s += `<rect x="${x}" y="${sy(a)}" width="${bw - 4}" height="${H - m.b - sy(a)}" rx="2" fill="${i === b ? 'var(--hl)' : 'var(--neg)'}" opacity="${i === b ? 1 : .45}"/>`; });
+    s += `<line x1="${m.l}" x2="${W - m.r}" y1="${sy(0.7)}" y2="${sy(0.7)}" stroke="var(--ink)" stroke-dasharray="6 4" stroke-width="1.5"/><text x="${W - m.r}" y="${sy(0.7) - 5}" text-anchor="end" class="t-ink">vraie accuracy = 70 %</text>`;
+    s += `<text x="${m.l}" y="${H - 6}">une barre = score de validation d'un modèle</text>`;
+    $('[data-p]', el).innerHTML = s;
+    $('[data-s]', el).innerHTML = `<div><small>Meilleur score de validation</small><b style="color:var(--warn)">${pct(v[b])}</b></div><div><small>Ce modèle sur le test set</small><b>${pct(test)}</b></div><div><small>Optimisme</small><b>+${fmt((v[b] - test) * 100, 1)} pts</b></div>`;
+    $('[data-c]', el).innerHTML = K === 1 ? 'Avec un seul modèle, on ne choisit rien : le score de validation reste une estimation honnête.' : `En gardant le meilleur de ${K} modèles, on a surtout gardé celui qui a eu de la chance sur ce validation set. Le test set, jamais utilisé pour choisir, redonne la vraie valeur. Plus on compare de modèles et plus le validation set est petit, plus l'écart grandit.`;
+  };
+  bindSlider(el, 'sp-k', v => v, draw); bindSlider(el, 'sp-n', v => v, draw);
+  $('#sp-k-o', el).textContent = 20; $('#sp-n-o', el).textContent = 50;
+  $('[data-new]', el).addEventListener('click', () => { seed++; draw(); }); draw();
+}};
+
+/* ---------- cross-validation ---------- */
+DEMOS.cv = { hint: 'Choisis k, puis lance l\'animation. Chaque ligne est un entraînement ; la case jaune est le fold de validation.', mount(el) {
+  const n = 20, ks = [2, 4, 5, 10, 20]; let k = 5, cur = -1, timer = null;
+  el.innerHTML = `<div class="row" style="margin-bottom:12px"><span class="small">k =</span><div class="seg" data-k>${ks.map(v => `<button data-v="${v}">${v === 20 ? '20 (LOO)' : v}</button>`).join('')}</div><button class="btn sm" data-play>▶ Animer</button></div>
+    <div class="fold-grid" data-g></div><div class="stat" data-s></div><div class="metrics" style="margin-top:10px" data-m></div>`;
+  const lvl = (x, c) => `<span style="display:inline-flex;gap:2px">${[0, 1, 2, 3, 4].map(i => `<i style="width:14px;height:8px;border-radius:2px;background:${i < x ? c : 'var(--line)'}"></i>`).join('')}</span>`;
+  const meta = { 2: [5, 1, 1], 4: [3, 2, 2], 5: [2, 2, 2], 10: [1, 3, 3], 20: [0, 5, 5] };
+  const draw = () => {
+    $$('[data-k] button', el).forEach(b => b.classList.toggle('on', +b.dataset.v === k));
+    let g = ''; for (let it = 0; it < k; it++) { g += `<div class="fold-row ${it === cur ? 'cur' : ''}" style="--k:${k}"><span>modèle ${it + 1}</span>${Array.from({ length: k }, (_, f) => `<i class="${f === it ? 'v' : ''}">${k <= 10 ? (f === it ? 'val' : n / k) : ''}</i>`).join('')}</div>`; }
+    $('[data-g]', el).innerHTML = g;
+    $('[data-s]', el).innerHTML = `<div><small>Entraînements</small><b>${k}</b></div><div><small>Train par modèle</small><b>${n * (k - 1) / k} pts</b></div><div><small>Validation par modèle</small><b>${n / k} pt${n / k > 1 ? 's' : ''}</b></div><div><small>Si n = 1000</small><b>${k === 20 ? 'k=n : 1000×' : 1000 * (k - 1) / k + ' / ' + 1000 / k}</b></div>`;
+    const [b, v, c] = meta[k];
+    $('[data-m]', el).innerHTML = `<div class="metric"><span><span class="nm">Biais de l'estimation</span><span class="al">modèles entraînés sur moins de données que le modèle final</span></span>${lvl(b, 'var(--warn)')}</div>
+      <div class="metric"><span><span class="nm">Variance de l'estimation</span><span class="al">petits folds de validation, modèles très corrélés</span></span>${lvl(v, 'var(--pos)')}</div>
+      <div class="metric"><span><span class="nm">Coût de calcul</span><span class="al">nombre d'entraînements</span></span>${lvl(c, 'var(--accent)')}</div>`;
+  };
+  $('[data-k]', el).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; k = +b.dataset.v; cur = -1; clearInterval(timer); draw(); });
+  $('[data-play]', el).addEventListener('click', () => { clearInterval(timer); cur = 0; draw(); timer = setInterval(() => { cur++; if (cur >= k) { clearInterval(timer); cur = -1; } draw(); }, k > 10 ? 250 : 650); });
+  draw();
+}};
+
+/* ---------- confusion matrix ---------- */
+DEMOS.confusion = { hint: 'Modifie les 4 cases directement dans la matrice, ou charge un scénario. Toutes les métriques se recalculent.', mount(el) {
+  const P = { 'Dépistage': [45, 5, 90, 860], 'Filtre anti-spam': [300, 60, 5, 635], 'Modèle paresseux': [0, 10, 0, 990], 'Équilibré': [400, 100, 100, 400] };
+  let v = { tp: 45, fn: 5, fp: 90, tn: 860 };
+  el.innerHTML = `<div class="row" style="margin-bottom:12px">${Object.keys(P).map(k => `<button class="btn sm" data-p="${k}">${k}</button>`).join('')}</div>
+   <div class="grid2"><div class="tbl-wrap"><table class="cm"><tr><td colspan="2" rowspan="2" style="border:none"></td><th colspan="2">True class</th></tr><tr><th>−1</th><th>+1</th></tr>
+   <tr><th rowspan="2">Predicted<br>class</th><th>−1</th><td class="cell-tn"><input class="mono" type="number" min="0" id="cm-tn" style="width:70px"><span class="lab">TN</span></td><td class="cell-fn"><input class="mono" type="number" min="0" id="cm-fn" style="width:70px"><span class="lab">FN · type II</span></td></tr>
+   <tr><th>+1</th><td class="cell-fp"><input class="mono" type="number" min="0" id="cm-fp" style="width:70px"><span class="lab">FP · type I</span></td><td class="cell-tp"><input class="mono" type="number" min="0" id="cm-tp" style="width:70px"><span class="lab">TP</span></td></tr></table>
+   <p class="small muted" data-tot style="text-align:center"></p></div><div class="metrics" data-m></div></div><div class="callout" data-c></div>`;
+  $$('input', el).forEach(i => { i.style.cssText += ';border:1px solid var(--line);border-radius:5px;background:var(--surface);text-align:center;padding:3px;font-size:16px;display:block;margin:0 auto 2px'; });
+  const set = () => ['tp', 'fn', 'fp', 'tn'].forEach(k => $('#cm-' + k, el).value = v[k]);
+  const draw = () => {
+    const { tp, fn, fp, tn } = v, N = tp + fn + fp + tn;
+    const R = tp / (tp + fn), Pr = tp / (tp + fp), Sp = tn / (tn + fp), A = (tp + tn) / N, F1 = 2 * Pr * R / (Pr + R), FDR = fp / (tp + fp);
+    const row = (nm, al, calc, val) => `<div class="metric"><span><span class="nm">${nm}</span><span class="al">${al}</span></span><span class="calc">${calc}<span class="val">${pct(val)}</span></span></div>`;
+    $('[data-m]', el).innerHTML = row('Recall', 'sensitivity · TPR', `${tp} / (${tp} + ${fn})`, R) + row('Precision', 'PPV', `${tp} / (${tp} + ${fp})`, Pr) + row('Specificity', 'TNR', `${tn} / (${tn} + ${fp})`, Sp) + row('FDR', '1 − precision', `${fp} / (${tp} + ${fp})`, FDR) + row('Accuracy', '', `${tp + tn} / ${N}`, A) + row('F1-score', 'moyenne harmonique P, R', `2·P·R / (P + R)`, F1);
+    $('[data-tot]', el).textContent = `${tp + fn} vrais positifs · ${tn + fp} vrais négatifs · ${N} au total`;
+    let c = '';
+    if (A > 0.9 && (R < 0.2 || !isFinite(Pr))) c = `<b>Accuracy paradox.</b> ${pct(A)} d'accuracy, mais le modèle ne trouve presque aucun positif (recall ${pct(R)}). L'accuracy est trompeuse quand les classes sont déséquilibrées.`;
+    else if (R > 0.85 && Pr < 0.5) c = `Recall élevé, precision faible : on rate peu de positifs, mais beaucoup d'alertes sont fausses. C'est acceptable pour un dépistage, où un second test vérifiera.`;
+    else if (Pr > 0.95 && R < 0.9) c = `Precision très élevée : quand le modèle dit +1, il a presque toujours raison. On accepte de rater quelques positifs (FN). C'est ce qu'on veut pour un filtre anti-spam : ne jamais jeter un vrai mail.`;
+    else c = `Quand les classes sont équilibrées, accuracy et F1 racontent à peu près la même histoire.`;
+    $('[data-c]', el).innerHTML = c;
+  };
+  el.addEventListener('input', e => { if (e.target.id?.startsWith('cm-')) { v[e.target.id.slice(3)] = Math.max(0, Math.round(+e.target.value || 0)); draw(); } });
+  el.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; const [tp, fn, fp, tn] = P[b.dataset.p]; v = { tp, fn, fp, tn }; set(); draw(); });
+  set(); draw();
+}};
+
+/* ---------- ROC ---------- */
+DEMOS.roc = { hint: 'Déplace le seuil T : le point bouge sur la courbe. Change la séparation : c\'est la courbe entière qui change.', mount(el) {
+  el.innerHTML = slider('roc-t', 'Seuil T', -3, 6, 0.05, 1.2) + slider('roc-d', 'Séparation des classes', 0, 4, 0.05, 2) + slider('roc-p', 'Proportion de malades', 0.01, 0.5, 0.01, 0.2) +
+    `<svg class="plot" viewBox="0 0 640 230" data-h style="margin-top:8px"></svg>
+    <div class="grid2" style="margin-top:14px"><svg class="plot" viewBox="0 0 300 290" data-r></svg><div><div class="tbl-wrap" data-cm></div><div class="metrics" style="margin-top:10px" data-m></div></div></div>`;
+  const st = { t: 1.2, d: 2, p: 0.2 };
+  const draw = () => {
+    const { t, d, p } = st, W = 640, H = 230, m = { l: 20, r: 10, t: 14, b: 32 };
+    const sx = lin(-4, 8, m.l, W - m.r), sy = lin(0, 0.45, H - m.b, m.t);
+    const area = (mu, a, b) => { const pts = [[sx(a), sy(0)]]; for (let x = a; x <= b + 1e-9; x += 0.04) pts.push([sx(x), sy(gpdf(x, mu))]); pts.push([sx(b), sy(0)]); return pathOf(pts) + 'Z'; };
+    const line = mu => { const pts = []; for (let x = -4; x <= 8; x += 0.04) pts.push([sx(x), sy(gpdf(x, mu))]); return pathOf(pts); };
+    let s = axesSVG({ W, H, m, sx, sy, xt: [-4, -2, 0, 2, 4, 6, 8], yt: [], xlab: 'score X donné par le classifier (ex. globules blancs)' });
+    s += `<path d="${area(0, -4, t)}" fill="var(--neg)" opacity=".18"/><path d="${area(0, t, 8)}" fill="var(--neg)" opacity=".55"/>`;
+    s += `<path d="${area(d, -4, t)}" fill="var(--pos)" opacity=".18"/><path d="${area(d, t, 8)}" fill="var(--pos)" opacity=".5"/>`;
+    s += `<path d="${line(0)}" fill="none" stroke="var(--neg)" stroke-width="2"/><path d="${line(d)}" fill="none" stroke="var(--pos)" stroke-width="2"/>`;
+    s += `<line x1="${sx(t)}" x2="${sx(t)}" y1="${m.t - 6}" y2="${H - m.b}" stroke="var(--ink)" stroke-width="2"/><text x="${sx(t)}" y="${m.t - 2}" text-anchor="middle" class="t-ink" style="font-size:12px">T</text>`;
+    s += `<text x="${sx(-2.6)}" y="${sy(0.3)}" style="fill:var(--neg);font-size:12px">sains · f₀</text><text x="${sx(d + 1.2)}" y="${sy(0.3)}" style="fill:var(--pos);font-size:12px">malades · f₁</text>`;
+    s += `<text x="${sx(t) - 6}" y="${m.t + 10}" text-anchor="end" class="t-ink">← prédit −1</text><text x="${sx(t) + 6}" y="${m.t + 10}" class="t-ink">prédit +1 →</text>`;
+    $('[data-h]', el).innerHTML = s;
+    // ROC
+    const TPR = 1 - Phi(t - d), FPR = 1 - Phi(t), AUC = Phi(d / Math.SQRT2);
+    const R = 300, rm = { l: 40, r: 12, t: 12, b: 36 }, rx = lin(0, 1, rm.l, R - rm.r), ry = lin(0, 1, 290 - rm.b, rm.t);
+    const pts = []; for (let T = 9; T >= -6; T -= 0.05) pts.push([rx(1 - Phi(T)), ry(1 - Phi(T - d))]);
+    let r = axesSVG({ W: R, H: 290, m: rm, sx: rx, sy: ry, xt: [0, 0.5, 1], yt: [0, 0.5, 1], xlab: 'False Positive Rate', ylab: 'True Positive Rate' });
+    r += `<path d="${pathOf([[rx(0), ry(0)], ...pts, [rx(1), ry(0)]])}Z" fill="var(--accent)" opacity=".12"/>`;
+    r += `<path d="M${rx(0)} ${ry(0)}L${rx(1)} ${ry(1)}" stroke="var(--muted)" stroke-dasharray="4 4"/><path d="${pathOf(pts)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+    r += `<circle cx="${rx(FPR)}" cy="${ry(TPR)}" r="7" fill="var(--hl)" stroke="var(--ink)" stroke-width="1.5"/>`;
+    r += `<text x="${rx(0.55)}" y="${ry(0.12)}" class="t-ink" style="font-size:13px">AUC = ${fmt(AUC, 3)}</text><text x="${rx(0.62)}" y="${ry(0.5)}" style="font-size:10px">hasard</text>`;
+    $('[data-r]', el).innerHTML = r;
+    const N = 1000, np = Math.round(N * p), nn = N - np, tp = Math.round(TPR * np), fn = np - tp, fp = Math.round(FPR * nn), tn = nn - fp;
+    $('[data-cm]', el).innerHTML = `<table class="cm"><tr><td colspan="2" style="border:none"></td><th>Vrai −1</th><th>Vrai +1</th></tr>
+      <tr><th rowspan="2">Prédit</th><th>−1</th><td class="cell-tn"><span class="big">${tn}</span><span class="lab">TN</span></td><td class="cell-fn"><span class="big">${fn}</span><span class="lab">FN</span></td></tr>
+      <tr><th>+1</th><td class="cell-fp"><span class="big">${fp}</span><span class="lab">FP</span></td><td class="cell-tp"><span class="big">${tp}</span><span class="lab">TP</span></td></tr></table><p class="small muted" style="text-align:center;margin:6px 0 0">sur ${N} patients, dont ${np} malades</p>`;
+    const Pr = tp / (tp + fp);
+    const row = (nm, al, val) => `<div class="metric"><span><span class="nm">${nm}</span><span class="al">${al}</span></span><span class="val">${pct(val)}</span></div>`;
+    $('[data-m]', el).innerHTML = row('TPR', 'recall · sensitivity', TPR) + row('FPR', '1 − specificity', FPR) + row('Precision', 'dépend de la proportion de malades', Pr) + row('Accuracy', '', (tp + tn) / N);
+  };
+  bindSlider(el, 'roc-t', v => fmt(v, 2), v => { st.t = v; draw(); }).go();
+  bindSlider(el, 'roc-d', v => fmt(v, 2), v => { st.d = v; draw(); }).go();
+  bindSlider(el, 'roc-p', v => Math.round(v * 100) + ' %', v => { st.p = v; draw(); }).go();
+}};
+/* ---------- curse of dimensionality ---------- */
+DEMOS.curse = { hint: '300 points tirés au hasard dans un cube [0,1]^d. On mesure leur distance à un point de référence. Augmente la dimension d.', mount(el) {
+  const D = [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000];
+  const stats = D.map((d, k) => { const r = rng(100 + k), q = Array.from({ length: d }, r);
+    const ds = Array.from({ length: 300 }, () => { let s = 0; for (let j = 0; j < d; j++) { const v = r() - q[j]; s += v * v; } return Math.sqrt(s); });
+    const mn = Math.min(...ds), mx = Math.max(...ds); return { d, ds, mn, mx, c: (mx - mn) / mn }; });
+  el.innerHTML = slider('cu-d', 'Dimension d', 0, D.length - 1, 1, 1) + `<div class="grid2" style="margin-top:10px"><svg class="plot" viewBox="0 0 360 240" data-h></svg><svg class="plot" viewBox="0 0 360 240" data-c></svg></div><div class="stat" data-s></div>`;
+  const W = 360, H = 240, m = { l: 40, r: 10, t: 12, b: 34 };
+  const draw = k => {
+    const S = stats[k], bins = Array(25).fill(0); S.ds.forEach(v => bins[Math.min(24, Math.floor(v / S.mx * 25))]++);
+    const sx = lin(0, 1, m.l, W - m.r), sy = lin(0, Math.max(...bins) * 1.1, H - m.b, m.t);
+    let s = axesSVG({ W, H, m, sx, sy, xt: [0, 0.25, 0.5, 0.75, 1], yt: [], xlab: 'distance / distance max', ylab: 'nombre de points' });
+    bins.forEach((b, i) => s += `<rect x="${sx(i / 25) + 1}" y="${sy(b)}" width="${sx(1 / 25) - sx(0) - 2}" height="${H - m.b - sy(b)}" fill="var(--accent)" opacity=".75" rx="1.5"/>`);
+    s += `<text x="${m.l + 6}" y="${m.t + 10}" class="t-ink">d = ${S.d}</text>`;
+    $('[data-h]', el).innerHTML = s;
+    const cx = lin(0, D.length - 1, m.l + 8, W - m.r - 8), cy = logsc(0.05, 1000, H - m.b, m.t);
+    let c = axesSVG({ W, H, m, sx: cx, sy: cy, xt: [], yt: [0.1, 1, 10, 100, 1000], xlab: 'dimension (1 → 1000)', ylab: '(max − min) / min' });
+    [0, 4, 7, 10].forEach(i => c += `<text x="${cx(i)}" y="${H - m.b + 15}" text-anchor="middle">${D[i]}</text>`);
+    c += `<path d="${pathOf(stats.map((v, i) => [cx(i), cy(clamp(v.c, 0.05, 1000))]))}" fill="none" stroke="var(--pos)" stroke-width="2"/>`;
+    stats.forEach((v, i) => c += `<circle cx="${cx(i)}" cy="${cy(clamp(v.c, 0.05, 1000))}" r="${i === k ? 6 : 3}" fill="${i === k ? 'var(--hl)' : 'var(--pos)'}" ${i === k ? 'stroke="var(--ink)"' : ''}/>`);
+    $('[data-c]', el).innerHTML = c;
+    $('[data-s]', el).innerHTML = `<div><small>Plus proche voisin</small><b>${fmt(S.mn, 3)}</b></div><div><small>Plus lointain</small><b>${fmt(S.mx, 3)}</b></div><div><small>Contraste (max − min) / min</small><b>${S.c > 100 ? fmt(S.c, 0) : fmt(S.c, 2)}</b></div>`;
+  };
+  bindSlider(el, 'cu-d', v => D[v], draw).go();
+  el.insertAdjacentHTML('beforeend', '<div class="callout">En dimension 1, certains points sont 100 fois plus proches que d\'autres. En dimension 1000, le plus proche et le plus lointain sont presque à la même distance : la notion de « voisin » ne veut plus dire grand-chose.</div>');
+}};
+
+/* ---------- rank ---------- */
+DEMOS.rank = { hint: 'Matrice clients × jours de la slide 15 (nombre d\'achats). Modifie les valeurs ou charge un exemple. Le rank se recalcule.', mount(el) {
+  const days = ['Wed', 'Thu', 'Fri', 'Sat', 'Sun'], who = ['George', 'Maria', 'Ian', 'Zoe', 'Helen', 'Marc'];
+  const base = [[1, 1, 1, 0, 0], [2, 2, 2, 0, 0], [5, 5, 5, 0, 0], [0, 0, 0, 2, 2], [0, 0, 0, 3, 3], [0, 0, 0, 1, 1]];
+  const P = { 'Slide 15': base, 'Client mixte': base.map((r, i) => i === 1 ? [2, 2, 2, 1, 1] : r.slice()), 'Nouveau profil': base.map((r, i) => i === 1 ? [2, 0, 2, 0, 0] : r.slice()), 'Bruit partout': base.map((r, i) => r.map((v, j) => v + ((i * 7 + j * 3) % 5 === 0 ? 1 : 0))) };
+  const expl = { 'Slide 15': 'Chaque ligne est un multiple de [1 1 1 0 0] (clients de semaine) ou de [0 0 0 1 1] (clients de week-end). 6 lignes, mais rank 2.', 'Client mixte': 'Maria = 2 × [1 1 1 0 0] + 1 × [0 0 0 1 1]. C\'est une combinaison linéaire des deux profils : le rank reste 2.', 'Nouveau profil': 'Maria achète le mercredi et le vendredi seulement. Ce n\'est pas une combinaison des deux profils : le rank passe à 3.', 'Bruit partout': 'Avec un peu de bruit, la matrice devient de rank plein. Mais regarde les singular values : deux sont grandes, les autres petites. C\'est exactement ce que la SVD exploitera.' };
+  let M = base.map(r => r.slice());
+  el.innerHTML = `<div class="row" style="margin-bottom:12px">${Object.keys(P).map(k => `<button class="btn sm" data-p="${k}">${k}</button>`).join('')}</div>
+   <div class="grid2"><div class="tbl-wrap"><table class="dm"><tr><th></th>${days.map(d => `<th>${d}</th>`).join('')}</tr>${who.map((w, i) => `<tr><th>${w}</th>${days.map((_, j) => `<td style="padding:2px"><input class="mono" type="number" id="rk-${i}-${j}" style="width:44px;text-align:center;border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:2px 0"></td>`).join('')}</tr>`).join('')}</table></div>
+   <div><div class="stat" style="margin-top:0"><div><small>Rank</small><b data-r style="font-size:28px"></b></div><div><small>Taille</small><b>6 × 5</b></div></div><svg class="plot" viewBox="0 0 300 150" data-sv style="margin-top:10px"></svg></div></div><div class="callout" data-c></div>`;
+  const set = () => M.forEach((r, i) => r.forEach((v, j) => $(`#rk-${i}-${j}`, el).value = v));
+  const draw = note => {
+    const r = rankOf(M); $('[data-r]', el).textContent = r;
+    const sv = svd(M).s; const W = 300, H = 150, m = { l: 30, r: 8, t: 18, b: 24 }, mx = Math.max(1, ...sv), sy = lin(0, mx, H - m.b, m.t), bw = (W - m.l - m.r) / 5;
+    let s = axesSVG({ W, H, m, sx: x => x, sy, yt: [0, Math.round(mx)] }) + `<text x="${m.l}" y="11">singular values σᵢ (cours suivant : SVD)</text>`;
+    for (let i = 0; i < 5; i++) { const v = sv[i] || 0; s += `<rect x="${m.l + i * bw + 6}" y="${sy(v)}" width="${bw - 12}" height="${H - m.b - sy(v)}" fill="var(--accent)" rx="2"/><text x="${m.l + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle">σ${i + 1}=${fmt(v, 1)}</text>`; }
+    $('[data-sv]', el).innerHTML = s;
+    $('[data-c]', el).innerHTML = note || `Rank = ${r} : il y a ${r} ligne${r > 1 ? 's' : ''} linéairement indépendante${r > 1 ? 's' : ''}, et autant de singular values non nulles.`;
+  };
+  el.addEventListener('input', e => { const m = e.target.id?.match(/^rk-(\d)-(\d)$/); if (!m) return; M[+m[1]][+m[2]] = +e.target.value || 0; draw(); });
+  el.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; M = P[b.dataset.p].map(r => r.slice()); set(); draw(expl[b.dataset.p]); });
+  set(); draw(expl['Slide 15']);
+}};
+
+/* ---------- eigen ---------- */
+DEMOS.eigen = { hint: 'Fais tourner le vecteur u (bleu). Au (rouge) est son image par A. Quand ils sont alignés, u est un eigenvector.', mount(el) {
+  let A = [[2, 1], [1, 2]];
+  el.innerHTML = `<div class="row" style="margin-bottom:10px"><span class="small">A =</span><span class="matedit" style="grid-template-columns:repeat(2,auto)"><input id="eg-a" type="number" step="0.5"><input id="eg-b" type="number" step="0.5"><input id="eg-b2" type="number" disabled><input id="eg-d" type="number" step="0.5"></span><span class="small muted">symétrique : le coin bas-gauche suit le coin haut-droit</span></div>` +
+    slider('eg-th', 'Angle de u', 0, 180, 0.5, 20) + `<div class="row" style="margin:6px 0 10px"><button class="btn sm" data-g="0">Aller sur u₁</button><button class="btn sm" data-g="1">Aller sur u₂</button></div>
+    <div class="grid2"><svg class="plot" viewBox="0 0 320 320" data-p></svg><div data-s></div></div>`;
+  const W = 320, c = 160; let th = 20, eg;
+  const inputs = () => { $('#eg-a', el).value = A[0][0]; $('#eg-b', el).value = A[0][1]; $('#eg-b2', el).value = A[1][0]; $('#eg-d', el).value = A[1][1]; };
+  $$('.matedit input', el).forEach(i => i.style.cssText = 'width:54px;text-align:center;font-family:var(--f-mono);border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:3px 0');
+  const draw = () => {
+    eg = jacobi(A); const sc = 150 / Math.max(1.2, Math.abs(eg.vals[0]), Math.abs(eg.vals[1]), 1) * 0.9;
+    const u = [Math.cos(th * Math.PI / 180), Math.sin(th * Math.PI / 180)], Au = [A[0][0] * u[0] + A[0][1] * u[1], A[1][0] * u[0] + A[1][1] * u[1]];
+    const P = v => [c + v[0] * sc, c - v[1] * sc];
+    let s = `<line x1="0" x2="${W}" y1="${c}" y2="${c}" class="grid"/><line y1="0" y2="${W}" x1="${c}" x2="${c}" class="grid"/>`;
+    const el2 = []; for (let a = 0; a <= 360; a += 4) { const v = [Math.cos(a * Math.PI / 180), Math.sin(a * Math.PI / 180)]; el2.push(P([A[0][0] * v[0] + A[0][1] * v[1], A[1][0] * v[0] + A[1][1] * v[1]])); }
+    s += `<path d="${pathOf(el2)}Z" fill="var(--accent-soft)" stroke="var(--line)"/><circle cx="${c}" cy="${c}" r="${sc}" fill="none" stroke="var(--muted)" stroke-dasharray="3 4"/>`;
+    eg.vecs.forEach(v => { const a = P(v.map(x => x * 3)), b = P(v.map(x => -x * 3)); s += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="var(--ok)" stroke-dasharray="6 5" stroke-width="1.2"/>`; });
+    const arrow = (v, col, w) => { const [x, y] = P(v), ang = Math.atan2(y - c, x - c), h = 9; return `<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" stroke="${col}" stroke-width="${w}"/><path d="M${x} ${y}L${x - h * Math.cos(ang - 0.4)} ${y - h * Math.sin(ang - 0.4)}L${x - h * Math.cos(ang + 0.4)} ${y - h * Math.sin(ang + 0.4)}Z" fill="${col}"/>`; };
+    s += arrow(Au, 'var(--pos)', 3) + arrow(u, 'var(--accent)', 3);
+    const [ux, uy] = P(u), [ax, ay] = P(Au); s += `<text x="${ux + 6}" y="${uy - 6}" style="fill:var(--accent);font-size:13px">u</text><text x="${ax + 6}" y="${ay - 6}" style="fill:var(--pos);font-size:13px">Au</text>`;
+    $('[data-p]', el).innerHTML = s;
+    const cross = u[0] * Au[1] - u[1] * Au[0], dot = u[0] * Au[0] + u[1] * Au[1], ang = Math.abs(Math.atan2(cross, dot) * 180 / Math.PI), angl = Math.min(ang, 180 - ang), al = angl < 1.2;
+    $('[data-s]', el).innerHTML = `<div class="metrics"><div class="metric"><span class="nm">u</span><span class="calc mono">[${fmt(u[0])}, ${fmt(u[1])}]</span></div><div class="metric"><span class="nm">Au</span><span class="calc mono">[${fmt(Au[0])}, ${fmt(Au[1])}]</span></div><div class="metric"><span class="nm">Angle entre u et Au</span><span class="val">${fmt(angl, 1)}°</span></div></div>
+      <div class="callout ${al ? 'ok' : ''}">${al ? `<b>Aligné !</b> Au = ${fmt(dot, 2)} · u. Donc u est un eigenvector, d'eigenvalue λ = ${fmt(dot, 2)}.` : 'Au n\'a pas la même direction que u : A fait tourner u. Ce n\'est pas un eigenvector.'}</div>
+      <p class="small muted" style="margin-top:10px">Eigenvalues de A : <b class="mono">λ₁ = ${fmt(eg.vals[0])}</b>, <b class="mono">λ₂ = ${fmt(eg.vals[1])}</b>. Les pointillés verts sont les deux eigenvectors, perpendiculaires car A est symétrique. Le cercle (tous les u de norme 1) devient une ellipse ; ses axes sont les eigenvectors.</p>`;
+  };
+  const sl = bindSlider(el, 'eg-th', v => v + '°', v => { th = v; draw(); });
+  el.addEventListener('input', e => { if (!['eg-a', 'eg-b', 'eg-d'].includes(e.target.id)) return; A = [[+$('#eg-a', el).value || 0, +$('#eg-b', el).value || 0], [+$('#eg-b', el).value || 0, +$('#eg-d', el).value || 0]]; $('#eg-b2', el).value = A[1][0]; draw(); });
+  el.addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; const v = eg.vecs[+b.dataset.g]; let a = Math.atan2(v[1], v[0]) * 180 / Math.PI; if (a < 0) a += 180; if (a > 180) a -= 180; sl.set(Math.round(a * 2) / 2); });
+  inputs(); sl.go();
+}};
+
+/* ---------- SVD (users × movies) ---------- */
+const MOVIES = ['Matrix', 'Alien', 'Serenity', 'Casablanca', 'Amélie'];
+const SVD_A = {
+  simple: [[1, 1, 1, 0, 0], [3, 3, 3, 0, 0], [4, 4, 4, 0, 0], [5, 5, 5, 0, 0], [0, 0, 0, 4, 4], [0, 0, 0, 5, 5], [0, 0, 0, 2, 2]],
+  real: [[1, 1, 1, 0, 0], [3, 3, 3, 0, 0], [4, 4, 4, 0, 0], [5, 5, 5, 0, 0], [0, 2, 0, 4, 4], [0, 0, 0, 5, 5], [0, 1, 0, 2, 2]],
+};
+const CNAME = ['SciFi', 'Romance', 'bruit'];
+DEMOS.svd = { hint: 'Exemple des slides 33–41. Clique sur un concept pour voir sa contribution σᵢ uᵢ vᵢᵀ à la matrice.', mount(el) {
+  let which = 'real', ci = 0;
+  el.innerHTML = `<div class="row" style="margin-bottom:12px"><div class="seg" data-w><button data-v="simple">Matrice simple</button><button data-v="real">Matrice réaliste</button></div></div>
+    <div class="row" style="margin-bottom:10px" data-cb></div><div class="mrow" data-m></div><div class="callout" data-c></div>
+    <div class="blk" style="margin-top:16px"><div class="eyebrow" style="margin-bottom:6px" data-rt></div><div class="mrow" data-r1></div></div>`;
+  const draw = () => {
+    const A = SVD_A[which], S = svd(A), r = S.s.length; ci = Math.min(ci, r - 1);
+    $$('[data-w] button', el).forEach(b => b.classList.toggle('on', b.dataset.v === which));
+    $('[data-cb]', el).innerHTML = S.s.map((s, i) => `<button class="btn sm ${i === ci ? 'pri' : ''}" data-c="${i}">Concept ${i + 1} · ${CNAME[i]} · σ = ${fmt(s, 1)}</button>`).join('');
+    const U = Tr(S.U), Sig = S.s.map((s, i) => S.s.map((_, j) => i === j ? s : 0)), Vt = S.V;
+    $('[data-m]', el).innerHTML = matHTML(A, { d: 0, heat: true, cap: 'A : users × ' + MOVIES.join(', ') }) + '<span class="op">=</span>' +
+      matHTML(U, { heat: true, hl: (_, c) => c === ci, cap: 'U : user-to-concept' }) + '<span class="op">×</span>' +
+      matHTML(Sig, { d: 1, heat: true, hl: (a, b) => a === ci && b === ci, cap: 'Σ : force' }) + '<span class="op">×</span>' +
+      matHTML(Vt, { heat: true, hl: rr => rr === ci, cap: 'Vᵀ : movie-to-concept' });
+    const u = S.U[ci], v = S.V[ci], top = v.map((x, j) => [x, MOVIES[j]]).sort((a, b) => Math.abs(b[0]) - Math.abs(a[0])).slice(0, 3).map(x => x[1]);
+    const msg = ci === 0 ? `Le concept 1 a la plus grande force (σ₁ = ${fmt(S.s[0], 1)}). Dans Vᵀ, il pèse surtout sur ${top.join(', ')} : c'est le concept <b>SciFi</b>. Dans U, ce sont les 4 premiers users qui l'aiment.`
+      : ci === 1 ? `Le concept 2 (σ₂ = ${fmt(S.s[1], 1)}) pèse sur Casablanca et Amélie : c'est le concept <b>Romance</b>, porté par les 3 derniers users.`
+      : `Le concept 3 a une force de seulement ${fmt(S.s[2], 1)} : il capte le bruit (les notes « parasites » des users 5 et 7 sur Alien). C'est lui qu'on jettera pour réduire la dimension.`;
+    $('[data-c]', el).innerHTML = msg + (which === 'simple' ? ' <br>Avec la matrice simple, il n\'y a que 2 concepts : rank = 2.' : '');
+    const R1 = u.map(a => v.map(b => S.s[ci] * a * b));
+    $('[data-rt]', el).textContent = `Contribution du concept ${ci + 1} : σ${ci + 1} · u${ci + 1} · v${ci + 1}ᵀ`;
+    $('[data-r1]', el).innerHTML = matHTML(R1, { d: 1, heat: true, max: 5, cap: `rank 1 · A = la somme de ces ${r} matrices` });
+  };
+  el.addEventListener('click', e => { const w = e.target.closest('[data-v]'); if (w) { which = w.dataset.v; draw(); return; } const b = e.target.closest('[data-c]'); if (b && b.tagName === 'BUTTON') { ci = +b.dataset.c; draw(); } });
+  draw();
+}};
+
+DEMOS.lowrank = { hint: 'On garde seulement les k plus grandes singular values. Compare A et sa reconstruction A_k.', mount(el) {
+  const A = SVD_A.real, S = svd(A), tot = S.s.reduce((a, s) => a + s * s, 0);
+  el.innerHTML = slider('lr-k', 'k (concepts gardés)', 1, S.s.length, 1, 2) + `<svg class="plot" viewBox="0 0 640 64" data-e style="margin:8px 0 12px"></svg><div class="mrow" data-m></div><div class="stat" data-s></div><div class="callout" data-c></div>`;
+  const draw = k => {
+    const Ak = A.map((_, i) => A[0].map((_, j) => S.s.slice(0, k).reduce((t, s, c) => t + s * S.U[c][i] * S.V[c][j], 0)));
+    const E = A.map((r, i) => r.map((v, j) => v - Ak[i][j])), fro = Math.sqrt(E.flat().reduce((a, v) => a + v * v, 0)), kept = S.s.slice(0, k).reduce((a, s) => a + s * s, 0) / tot;
+    let x = 10, s = ''; S.s.forEach((sv, i) => { const w = sv * sv / tot * 620; s += `<rect x="${x}" y="8" width="${Math.max(w - 2, 1)}" height="26" rx="3" fill="${i < k ? 'var(--accent)' : 'var(--line)'}"/>`; if (w > 60) s += `<text x="${x + 6}" y="26" style="fill:${i < k ? 'var(--accent-ink)' : 'var(--muted)'}">σ${i + 1}² = ${fmt(sv * sv, 1)}</text>`; x += w; });
+    s += `<text x="10" y="54">energy gardée : ${pct(kept)} · règle : garder 80–90 %</text>`;
+    $('[data-e]', el).innerHTML = s;
+    $('[data-m]', el).innerHTML = matHTML(A, { d: 0, heat: true, max: 5, cap: 'A (original)' }) + '<span class="op">≈</span>' + matHTML(Ak, { d: 2, heat: true, max: 5, cap: `A_${k} (rank ${k})` }) + '<span class="op">→</span>' + matHTML(E, { d: 2, heat: true, max: 5, cap: 'erreur A − A_k' });
+    $('[data-s]', el).innerHTML = `<div><small>Energy gardée</small><b>${pct(kept)}</b></div><div><small>‖A − A_k‖_F</small><b>${fmt(fro, 2)}</b></div><div><small>√(σ²ₖ₊₁ + …)</small><b>${fmt(Math.sqrt(S.s.slice(k).reduce((a, s) => a + s * s, 0)), 2)}</b></div><div><small>Nombres stockés</small><b>${k * (7 + 5 + 1)} au lieu de 35</b></div>`;
+    $('[data-c]', el).innerHTML = k === 1 ? 'Avec k = 1, on ne garde que SciFi : les fans de Romance sont reconstruits presque à 0. Environ 63 % de l\'energy, ce n\'est pas assez.' : k === 2 ? 'Avec k = 2 (SciFi + Romance), 99 % de l\'energy et une reconstruction très proche (slide 52). C\'est le bon choix : le 3ᵉ concept n\'est que du bruit.' : 'Avec tous les concepts, la reconstruction est exacte, mais on ne compresse plus rien.';
+  };
+  bindSlider(el, 'lr-k', v => v, draw).go();
+}};
+
+/* ---------- PCA ---------- */
+DEMOS.pca = { hint: 'Fais tourner la direction w et cherche celle qui maximise la variance des projections. Puis teste l\'effet de l\'échelle.', mount(el) {
+  const r = rng(9), base = Array.from({ length: 70 }, () => { const a = randn(r) * 1.6, b = randn(r) * 0.55, t = 0.6; return [a * Math.cos(t) - b * Math.sin(t), a * Math.sin(t) + b * Math.cos(t)]; });
+  let th = 100, scale = 1, stdz = false;
+  el.innerHTML = slider('pc-th', 'Direction de w', 0, 180, 1, 100) + `<div class="row" style="margin:6px 0 12px"><button class="btn sm pri" data-pc1>Trouver PC1</button><div class="seg" data-sc><button data-v="1">x₁ × 1</button><button data-v="5">x₁ × 5</button></div><label class="row small" style="gap:6px"><input type="checkbox" id="pc-std"> Standardiser</label></div>
+    <div class="grid2"><svg class="plot" viewBox="0 0 340 340" data-p></svg><div data-s></div></div>`;
+  let st;
+  const prep = () => {
+    let X = base.map(([a, b]) => [a * scale, b]); const mu = [0, 1].map(j => X.reduce((s, p) => s + p[j], 0) / X.length);
+    X = X.map(p => [p[0] - mu[0], p[1] - mu[1]]);
+    if (stdz) { const sd = [0, 1].map(j => Math.sqrt(X.reduce((s, p) => s + p[j] ** 2, 0) / X.length)); X = X.map(p => [p[0] / sd[0], p[1] / sd[1]]); }
+    const C = [[0, 0], [0, 0]]; X.forEach(p => { C[0][0] += p[0] * p[0]; C[0][1] += p[0] * p[1]; C[1][1] += p[1] * p[1]; }); C[1][0] = C[0][1];
+    const n = X.length, eg = jacobi(C.map(r => r.map(v => v / n))); st = { X, eg };
+  };
+  const draw = () => {
+    const { X, eg } = st, n = X.length, w = [Math.cos(th * Math.PI / 180), Math.sin(th * Math.PI / 180)];
+    const z = X.map(p => p[0] * w[0] + p[1] * w[1]), vz = z.reduce((s, v) => s + v * v, 0) / n, tot = eg.vals[0] + eg.vals[1];
+    const R = Math.max(...X.flat().map(Math.abs)) * 1.1, W = 340, s0 = lin(-R, R, 14, W - 14), sy = lin(-R, R, W - 14, 14);
+    let s = `<line x1="${s0(-R)}" x2="${s0(R)}" y1="${sy(0)}" y2="${sy(0)}" class="grid"/><line y1="${sy(-R)}" y2="${sy(R)}" x1="${s0(0)}" x2="${s0(0)}" class="grid"/>`;
+    s += `<text x="${W - 16}" y="${sy(0) - 5}" text-anchor="end">x₁${scale > 1 ? ' (×5)' : ''}</text><text x="${s0(0) + 5}" y="22">x₂</text>`;
+    const L = R * 1.6; s += `<line x1="${s0(-w[0] * L)}" y1="${sy(-w[1] * L)}" x2="${s0(w[0] * L)}" y2="${sy(w[1] * L)}" stroke="var(--hl)" stroke-width="3"/>`;
+    X.forEach((p, i) => { const q = [z[i] * w[0], z[i] * w[1]]; s += `<line x1="${s0(p[0])}" y1="${sy(p[1])}" x2="${s0(q[0])}" y2="${sy(q[1])}" stroke="var(--muted)" opacity=".25"/>`; });
+    X.forEach(p => s += `<circle cx="${s0(p[0])}" cy="${sy(p[1])}" r="3.2" fill="var(--accent)" opacity=".8"/>`);
+    z.forEach(v => s += `<circle cx="${s0(v * w[0])}" cy="${sy(v * w[1])}" r="2.6" fill="var(--pos)"/>`);
+    eg.vecs.forEach((v, i) => { const l = Math.sqrt(eg.vals[i]) * 2; s += `<line x1="${s0(0)}" y1="${sy(0)}" x2="${s0(v[0] * l)}" y2="${sy(v[1] * l)}" stroke="var(--ok)" stroke-width="2" stroke-dasharray="5 3"/><text x="${s0(v[0] * l) + 4}" y="${sy(v[1] * l) - 4}" style="fill:var(--ok)">PC${i + 1}</text>`; });
+    $('[data-p]', el).innerHTML = s;
+    const ratio = vz / eg.vals[0], pc1 = Math.atan2(eg.vecs[0][1], eg.vecs[0][0]) * 180 / Math.PI;
+    $('[data-s]', el).innerHTML = `<div class="metrics"><div class="metric"><span><span class="nm">Variance projetée sur w</span><span class="al">Var(z) = wᵀΣw</span></span><span class="val">${fmt(vz)}</span></div>
+      <div class="metric"><span><span class="nm">λ₁ (maximum possible)</span><span class="al">atteint quand w = PC1</span></span><span class="val">${fmt(eg.vals[0])}</span></div>
+      <div class="metric"><span><span class="nm">λ₂</span><span class="al">variance sur PC2</span></span><span class="val">${fmt(eg.vals[1])}</span></div>
+      <div class="metric"><span><span class="nm">Variance expliquée par PC1</span><span class="al">λ₁ / (λ₁ + λ₂)</span></span><span class="val">${pct(eg.vals[0] / tot)}</span></div></div>
+      <div class="bar" style="margin-top:12px;height:10px"><i style="width:${ratio * 100}%;background:var(--hl)"></i></div><p class="small muted" style="margin:6px 0 0">w capte ${pct(ratio, 0)} de la variance maximale.</p>
+      <div class="callout ${ratio > 0.995 ? 'ok' : ''}">${ratio > 0.995 ? '<b>Trouvé.</b> w est le 1er principal axis : l\'eigenvector de Σ qui a la plus grande eigenvalue.' : scale > 1 && !stdz ? 'x₁ est 5 fois plus étalée : PC1 se colle presque à l\'axe x₁. Coche « Standardiser » pour corriger.' : 'Points bleus = données centrées. Points rouges = leurs projections sur la droite jaune. On cherche la droite où les points rouges sont les plus étalés.'}</div>`;
+    st.pc1 = ((pc1 % 180) + 180) % 180;
+  };
+  const sl = bindSlider(el, 'pc-th', v => v + '°', v => { th = v; draw(); });
+  const seg = () => $$('[data-sc] button', el).forEach(b => b.classList.toggle('on', +b.dataset.v === scale));
+  el.addEventListener('click', e => { const b = e.target.closest('[data-sc] button'); if (b) { scale = +b.dataset.v; seg(); prep(); draw(); } if (e.target.closest('[data-pc1]')) sl.set(Math.round(st.pc1)); });
+  $('#pc-std', el).addEventListener('change', e => { stdz = e.target.checked; prep(); draw(); });
+  seg(); prep(); sl.go();
+}};
+
+/* ---------- PCA pas à pas ---------- */
+DEMOS.pcasteps = { hint: 'Un mini-dataset de 5 points et 2 features. Avance étape par étape : c\'est exactement le calcul qu\'on peut te demander à la main.', mount(el) {
+  const X = [[2, 1], [3, 4], [5, 3], [6, 6], [9, 6]], m = X.length;
+  const mu = [0, 1].map(j => X.reduce((s, p) => s + p[j], 0) / m), C = X.map(p => [p[0] - mu[0], p[1] - mu[1]]), S = mm(Tr(C), C), eg = jacobi(S);
+  const U = eg.vecs.map(signFix), Z = C.map(p => p[0] * U[0][0] + p[1] * U[0][1]);
+  const steps = ['1. Données X', '2. Centrer', '3. Σ = CᵀC', '4. Eigen', '5. Projeter'];
+  let k = 0;
+  el.innerHTML = `<div class="steps" data-st>${steps.map((s, i) => `<button data-i="${i}">${s}</button>`).join('')}</div><div class="grid2"><div data-t style="min-width:0"></div><svg class="plot" viewBox="0 0 300 260" data-p></svg></div><div class="row" style="margin-top:12px"><button class="btn sm" data-prev>← Précédent</button><button class="btn sm pri" data-next>Étape suivante →</button></div>`;
+  const draw = () => {
+    $$('[data-st] button', el).forEach((b, i) => b.classList.toggle('on', i === k));
+    const T = [
+      `<p>m = 5 observations, n = 2 features.</p><div class="mrow">${matHTML(X, { d: 0, cap: 'X (5 × 2)' })}</div>`,
+      `<p>Moyenne de chaque colonne : M = [${mu.join(', ')}]. On la retire à chaque ligne.</p><div class="mrow">${matHTML(X, { d: 0, cap: 'X' })}<span class="op">−</span>${matHTML([mu], { d: 0, cap: 'M' })}<span class="op">=</span>${matHTML(C, { d: 0, cap: 'C (centrée)' })}</div>`,
+      `<p>Σ = CᵀC. Diagonale = Σ des carrés de chaque colonne ; hors diagonale = Σ des produits x₁·x₂.</p><div class="mrow">${matHTML(S, { d: 0, cap: 'Σ = CᵀC (2 × 2)' })}</div><p class="small muted">Ex. : Σ₁₁ = 9 + 4 + 0 + 1 + 16 = 30 ; Σ₁₂ = 9 + 0 + 0 + 2 + 8 = 19.</p>`,
+      `<p>On résout det(Σ − λI) = 0 :</p><div class="fblock">λ = (30 + 18)/2 ± √(((30 − 18)/2)² + 19²) = 24 ± ${fmt(Math.sqrt(36 + 361), 3)}</div><div class="mrow">${matHTML([eg.vals], { cap: 'λ₁, λ₂' })}${matHTML(Tr(U), { d: 3, cap: 'U : eigenvectors en colonnes' })}</div><p>Variance expliquée par PC1 : ${fmt(eg.vals[0], 2)} / ${fmt(eg.vals[0] + eg.vals[1], 2)} = <b>${pct(eg.vals[0] / (eg.vals[0] + eg.vals[1]))}</b> ≥ 85 % → on garde <b>k = 1</b>.</p>`,
+      `<p>Principal components = C · u₁ : chaque point est maintenant décrit par <b>un seul nombre</b>.</p><div class="mrow">${matHTML(C, { d: 0, cap: 'C' })}<span class="op">×</span>${matHTML(U[0].map(v => [v]), { d: 3, cap: 'u₁' })}<span class="op">=</span>${matHTML(Z.map(v => [v]), { cap: 'z (5 × 1)' })}</div>`,
+    ][k];
+    $('[data-t]', el).innerHTML = T;
+    const W = 300, H = 260, mg = { l: 30, r: 10, t: 10, b: 26 }, P = k === 0 ? X : C;
+    const sx = k === 0 ? lin(0, 10, mg.l, W - mg.r) : lin(-5, 5, mg.l, W - mg.r), sy = k === 0 ? lin(0, 7.7, H - mg.b, mg.t) : lin(-3.85, 3.85, H - mg.b, mg.t);
+    let s = axesSVG({ W, H, m: mg, sx, sy, xt: k === 0 ? [0, 5, 10] : [-4, 0, 4], yt: k === 0 ? [0, 3, 6] : [-3, 0, 3] });
+    if (k >= 1) s += `<line x1="${sx(-5)}" x2="${sx(5)}" y1="${sy(0)}" y2="${sy(0)}" class="ax" opacity=".4"/><line y1="${sy(-3.85)}" y2="${sy(3.85)}" x1="${sx(0)}" x2="${sx(0)}" class="ax" opacity=".4"/>`;
+    if (k >= 3) U.forEach((u, i) => s += `<line x1="${sx(-u[0] * 6)}" y1="${sy(-u[1] * 6)}" x2="${sx(u[0] * 6)}" y2="${sy(u[1] * 6)}" stroke="${i ? 'var(--muted)' : 'var(--hl)'}" stroke-width="${i ? 1.2 : 3}" ${i ? 'stroke-dasharray="4 4"' : ''}/><text x="${sx(u[0] * 4.2) + 4}" y="${sy(u[1] * 4.2) - 4}">${i ? 'u₂' : 'u₁'}</text>`);
+    if (k === 4) C.forEach((p, i) => { const q = [Z[i] * U[0][0], Z[i] * U[0][1]]; s += `<line x1="${sx(p[0])}" y1="${sy(p[1])}" x2="${sx(q[0])}" y2="${sy(q[1])}" stroke="var(--muted)" stroke-dasharray="2 2"/><circle cx="${sx(q[0])}" cy="${sy(q[1])}" r="4" fill="var(--pos)"/>`; });
+    P.forEach((p, i) => s += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="5" fill="var(--accent)"/><text x="${sx(p[0]) + 7}" y="${sy(p[1]) + 4}">${i + 1}</text>`);
+    if (k === 0) s += `<text x="${sx(mu[0]) + 6}" y="${sy(mu[1]) - 6}" style="fill:var(--pos)">moyenne</text><circle cx="${sx(mu[0])}" cy="${sy(mu[1])}" r="4" fill="none" stroke="var(--pos)" stroke-width="2"/>`;
+    $('[data-p]', el).innerHTML = s;
+    $('[data-prev]', el).disabled = k === 0; $('[data-next]', el).hidden = k === 4;
+  };
+  el.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) { k = +b.dataset.i; draw(); } if (e.target.closest('[data-next]')) { k = Math.min(4, k + 1); draw(); } if (e.target.closest('[data-prev]')) { k = Math.max(0, k - 1); draw(); } });
+  draw();
+}};
+
+/* ---------- Isomap / geodesic ---------- */
+DEMOS.isomap = { hint: 'Coupe 2D d\'un Swiss roll. Clique sur deux points. La ligne rouge est la distance euclidienne, le chemin jaune la distance géodésique (shortest path dans le kNN graph).', mount(el) {
+  const r = rng(5), P = []; const N = 95;
+  for (let i = 0; i < N; i++) { const t = 1.5 * Math.PI + 3 * Math.PI * i / (N - 1); P.push([t * Math.cos(t) + (r() - 0.5) * 0.4, t * Math.sin(t) + (r() - 0.5) * 0.4]); }
+  let A = 4, B = 52, k = 5;
+  el.innerHTML = slider('is-k', 'k (voisins du kNN graph)', 2, 16, 1, 5) + `<div class="grid2" style="margin-top:10px"><svg class="plot" viewBox="0 0 340 340" data-p style="cursor:crosshair"></svg><div data-s></div></div>`;
+  const d = (a, b) => Math.hypot(P[a][0] - P[b][0], P[a][1] - P[b][1]);
+  const W = 340, sx = lin(-15, 15, 10, W - 10), sy = lin(-15, 15, W - 10, 10);
+  const draw = () => {
+    const nb = P.map((_, i) => P.map((_, j) => j).filter(j => j !== i).sort((a, b) => d(i, a) - d(i, b)).slice(0, k));
+    const adj = P.map(() => new Map()); nb.forEach((l, i) => l.forEach(j => { adj[i].set(j, d(i, j)); adj[j].set(i, d(i, j)); }));
+    const dist = Array(N).fill(Infinity), prev = Array(N).fill(-1), done = Array(N).fill(false); dist[A] = 0;
+    for (let it = 0; it < N; it++) { let u = -1; for (let i = 0; i < N; i++) if (!done[i] && (u < 0 || dist[i] < dist[u])) u = i; if (u < 0 || dist[u] === Infinity) break; done[u] = true; adj[u].forEach((w, v) => { if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; } }); }
+    const path = []; if (dist[B] < Infinity) for (let v = B; v >= 0; v = prev[v]) path.push(v);
+    let s = ''; adj.forEach((m, i) => m.forEach((_, j) => { if (i < j) s += `<line x1="${sx(P[i][0])}" y1="${sy(P[i][1])}" x2="${sx(P[j][0])}" y2="${sy(P[j][1])}" stroke="var(--muted)" opacity=".3"/>`; }));
+    s += `<path d="${pathOf(path.map(i => [sx(P[i][0]), sy(P[i][1])]))}" fill="none" stroke="var(--hl)" stroke-width="4" stroke-linejoin="round"/>`;
+    s += `<line x1="${sx(P[A][0])}" y1="${sy(P[A][1])}" x2="${sx(P[B][0])}" y2="${sy(P[B][1])}" stroke="var(--pos)" stroke-width="2" stroke-dasharray="6 4"/>`;
+    P.forEach((p, i) => s += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="${i === A || i === B ? 7 : 3.4}" fill="${i === A || i === B ? 'var(--ink)' : 'var(--accent)'}" data-i="${i}"/>`);
+    s += `<text x="${sx(P[A][0]) + 9}" y="${sy(P[A][1]) + 4}" class="t-ink">A</text><text x="${sx(P[B][0]) + 9}" y="${sy(P[B][1]) + 4}" class="t-ink">B</text>`;
+    $('[data-p]', el).innerHTML = s;
+    const eu = d(A, B), ge = dist[B], ratio = ge / eu;
+    const short = ratio < 1.6 && Math.abs(A - B) > 30;
+    $('[data-s]', el).innerHTML = `<div class="metrics"><div class="metric"><span><span class="nm" style="color:var(--pos)">Distance euclidienne</span><span class="al">ce que voient PCA et MDS classique</span></span><span class="val">${fmt(eu, 1)}</span></div>
+      <div class="metric"><span><span class="nm" style="color:var(--warn)">Distance géodésique</span><span class="al">shortest path dans le kNN graph (Isomap)</span></span><span class="val">${ge < Infinity ? fmt(ge, 1) : '∞'}</span></div>
+      <div class="metric"><span><span class="nm">Rapport</span><span class="al">géodésique / euclidienne</span></span><span class="val">${ge < Infinity ? '×' + fmt(ratio, 1) : '—'}</span></div></div>
+      <div class="callout ${short || ge === Infinity ? '' : 'ok'}">${ge === Infinity ? 'Avec si peu de voisins, le graph est coupé en morceaux : pas de chemin entre A et B.' : short ? '<b>Court-circuit.</b> Avec k trop grand, des arêtes sautent d\'une couche du rouleau à l\'autre et la géodésique ne suit plus la surface. Le choix de k compte.' : 'A et B sont proches « à vol d\'oiseau », mais très loin le long de la spirale. Isomap garde cette distance-là, puis applique MDS pour « dérouler » le rouleau.'}</div>`;
+  };
+  let pickA = false;
+  $('[data-p]', el).addEventListener('click', e => { const svg = e.currentTarget, pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+    let best = 0, bd = Infinity; P.forEach((p, i) => { const dd = Math.hypot(sx(p[0]) - q.x, sy(p[1]) - q.y); if (dd < bd) { bd = dd; best = i; } });
+    if (pickA) A = best; else B = best; pickA = !pickA; draw(); });
+  bindSlider(el, 'is-k', v => v, v => { k = v; draw(); }).go();
+}};
+
+/* ---------- feature selection ---------- */
+DEMOS.fsel = { hint: 'À gauche : pourquoi on ne teste pas tous les sous-ensembles. À droite : calcule un χ² sur une table 2 × 2.', mount(el) {
+  el.innerHTML = `<div class="grid2"><div>${slider('fs-n', 'Nombre de features n', 1, 60, 1, 20)}<div data-c></div></div>
+    <div><p class="small" style="margin-top:0">Feature A = « l'email contient le mot <i>gratuit</i> ». Classe C = spam ou non. Modifie les effectifs observés O<sub>ij</sub>.</p>
+    <div class="tbl-wrap"><table class="cm"><tr><td style="border:none"></td><th>Spam</th><th>Pas spam</th></tr>
+    <tr><th>Contient « gratuit »</th><td><input id="fs-a" type="number" min="0" value="40"></td><td><input id="fs-b" type="number" min="0" value="10"></td></tr>
+    <tr><th>Ne contient pas</th><td><input id="fs-c" type="number" min="0" value="60"></td><td><input id="fs-d" type="number" min="0" value="190"></td></tr></table></div><div data-x></div></div></div>`;
+  $$('input[type=number]', el).forEach(i => i.style.cssText = 'width:64px;text-align:center;font-family:var(--f-mono);border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:3px 0');
+  const human = s => s < 60 ? fmt(s, 0) + ' s' : s < 3600 ? fmt(s / 60, 0) + ' min' : s < 86400 ? fmt(s / 3600, 1) + ' h' : s < 3.15e7 ? fmt(s / 86400, 0) + ' jours' : (s / 3.15e7 < 1e6 ? fmt(s / 3.15e7, 0) : (s / 3.15e7).toExponential(1)) + ' ans';
+  const drawN = n => {
+    const ex = 2 ** n, fw = n * (n + 1) / 2;
+    $('[data-c]', el).innerHTML = `<div class="metrics" style="margin-top:10px"><div class="metric"><span><span class="nm">Recherche exhaustive</span><span class="al">2ⁿ sous-ensembles</span></span><span class="calc">${ex > 1e9 ? ex.toExponential(2) : ex.toLocaleString('fr-FR')}<span class="val">${human(ex)}</span></span></div>
+      <div class="metric"><span><span class="nm">Forward search</span><span class="al">≈ n(n+1)/2 entraînements, O(n²·T)</span></span><span class="calc">${fw.toLocaleString('fr-FR')}<span class="val">${human(fw)}</span></span></div></div>
+      <p class="small muted">En supposant 1 seconde par entraînement (T = 1 s).</p>`;
+  };
+  const drawX = () => {
+    const O = [[+$('#fs-a', el).value || 0, +$('#fs-b', el).value || 0], [+$('#fs-c', el).value || 0, +$('#fs-d', el).value || 0]];
+    const m = O.flat().reduce((a, b) => a + b, 0) || 1, ri = O.map(r => r[0] + r[1]), cj = [O[0][0] + O[1][0], O[0][1] + O[1][1]];
+    const E = ri.map(a => cj.map(b => a * b / m)); let x2 = 0; O.forEach((r, i) => r.forEach((o, j) => { if (E[i][j] > 0) x2 += (o - E[i][j]) ** 2 / E[i][j]; }));
+    $('[data-x]', el).innerHTML = `<p class="small" style="margin:10px 0 4px">Effectifs attendus si indépendance : E<sub>ij</sub> = (total ligne i × total colonne j) / m</p><div class="mrow">${matHTML(E, { d: 1, cap: 'E (attendus)' })}</div>
+      <div class="stat"><div><small>χ²</small><b>${fmt(x2, 2)}</b></div><div><small>Verdict</small><b style="font-size:14px">${x2 > 3.84 ? 'dépendants → feature utile' : 'pas de lien net'}</b></div></div>
+      <p class="small muted" style="margin:8px 0 0">Repère : pour une table 2 × 2, χ² > 3.84 signale une dépendance au seuil de 5 %. On classe les features par χ² décroissant.</p>`;
+  };
+  bindSlider(el, 'fs-n', v => v, drawN).go();
+  el.addEventListener('input', e => { if (e.target.id?.startsWith('fs-') && e.target.id !== 'fs-n') drawX(); });
+  drawX();
+}};
+/* ---------- state ---------- */
+const KEY = 'mllab-v1';
+let S = { done: [], wrong: [], best: {} };
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+const isDone = id => S.done.includes(id);
+const toggleDone = id => { S.done = isDone(id) ? S.done.filter(x => x !== id) : [...S.done, id]; save(); };
+const lecOf = id => LECTURES.find(l => l.id === id);
+const qid = q => QUIZ.indexOf(q);
+
+/* ---------- nav ---------- */
+function renderNav(cur) {
+  let s = `<div class="brand" data-go="home"><b>ML Lab</b><span>DSBA · Fall 26</span></div><div class="nav">`;
+  s += `<a href="#home" class="tool ${cur === 'home' ? 'on' : ''}">Accueil</a>`;
+  LECTURES.forEach(L => {
+    const cs = CONCEPTS.filter(c => c.lec === L.id), d = cs.filter(c => isDone(c.id)).length;
+    s += `<div class="nav-sec"><span>Cours ${L.n} · ${L.short}</span><span>${d}/${cs.length}</span></div>`;
+    cs.forEach(c => s += `<a href="#${c.id}" class="${cur === c.id ? 'on' : ''}"><i class="dot ${isDone(c.id) ? 'done' : ''}"></i>${c.title}${c.demo ? '' : ''}</a>`);
+  });
+  s += `<div class="nav-sec"><span>S'entraîner</span></div>
+    <a href="#quiz" class="tool ${cur.startsWith('quiz') ? 'on' : ''}">Quiz style examen<span class="tag">${QUIZ.length}</span></a>
+    <a href="#formules" class="tool ${cur === 'formules' ? 'on' : ''}">Formulaire</a></div>`;
+  $('#side').innerHTML = s;
+}
+
+/* ---------- pages ---------- */
+function pageHome() {
+  const cards = LECTURES.map(L => {
+    const cs = CONCEPTS.filter(c => c.lec === L.id), d = cs.filter(c => isDone(c.id)).length, best = S.best[L.id];
+    return `<div class="lec"><div class="eyebrow">Cours ${L.n} · ${L.date} · ${L.slides} slides</div><h3>${L.title}</h3>
+      <div class="bar"><i style="width:${d / cs.length * 100}%"></i></div><div class="small muted">${d} / ${cs.length} concepts maîtrisés${best != null ? ` · meilleur quiz : ${best} %` : ''}</div>
+      <div class="chips">${cs.map(c => `<a class="chip ${isDone(c.id) ? 'done' : ''}" href="#${c.id}">${c.title}</a>`).join('')}</div>
+      <div class="row"><a class="btn pri sm" href="#${(cs.find(c => !isDone(c.id)) || cs[0]).id}">${d ? 'Continuer' : 'Commencer'}</a><a class="btn sm" href="#quiz-${L.id}">Quiz du cours ${L.n}</a></div></div>`;
+  }).join('');
+  return `<div class="hero"><div class="eyebrow">Foundations of Machine Learning · Master DSBA · F. Malliaros</div><h1>Comprendre chaque slide, sans y passer une heure.</h1>
+    <p>Pour chaque concept : l'essentiel en quelques lignes, une démo à manipuler, le piège classique de l'examen et 1 à 3 questions pour vérifier. Les explications sont en français, les termes restent en anglais comme à l'examen.</p></div>
+    <div class="lec-cards">${cards}</div>
+    <div class="blk"><h2 style="font-size:20px;margin-bottom:4px">Ce qui compte pour la note</h2>
+    <div class="info"><div><b>15 %</b><span>In-class questions, au début des TP. Même style que l'examen : c'est ce que le quiz imite.</span></div><div><b>35 %</b><span>Data challenge Kaggle, de la séance 4 à la séance 8. Rapport court + code.</span></div><div><b>50 %</b><span>Examen écrit final en décembre.</span></div></div></div>
+    <div class="blk"><h2 style="font-size:20px;margin-bottom:8px">Méthode conseillée</h2><ol class="howto">
+      <li>Lis « L'essentiel » d'un concept (une minute).</li><li>Joue avec la démo jusqu'à pouvoir prédire ce qui va se passer avant de bouger le curseur.</li>
+      <li>Réponds aux questions « Teste-toi », puis clique « Je maîtrise ».</li><li>Avant le TP, fais le quiz du cours en mode « Mes erreurs ».</li></ol></div>
+    <div class="blk"><h2 style="font-size:20px;margin-bottom:8px">À venir</h2><p class="small muted" style="margin:0 0 8px">Programme du cours (sous réserve de changements).</p>
+    <div class="chips">${['3 · Linear & logistic regression', '4 · Probabilistic classifiers, LDA', '5 · k-Nearest Neighbors', '6 · Trees, boosting, random forests', '7 · Support Vector Machines', '8 · Clustering'].map(t => `<span class="chip" style="cursor:default;color:var(--muted)">${t}</span>`).join('')}</div></div>`;
+}
+
+function qCard(q, onAnswer) {
+  const wrap = document.createElement('div'); wrap.className = 'q-card';
+  wrap.innerHTML = `<div class="eyebrow">Cours ${lecOf(q.l).n} · ${CONCEPTS.find(c => c.id === q.c).title}</div><div class="q-prompt">${q.q}</div>
+    <div class="q-opts">${q.o.map((o, k) => `<button class="q-opt" data-k="${k}"><span class="k">${'ABCD'[k]}</span><span>${o}</span></button>`).join('')}</div><div class="q-exp" hidden></div>`;
+  let done = false;
+  wrap.querySelector('.q-opts').addEventListener('click', e => {
+    const b = e.target.closest('.q-opt'); if (!b || done) return; done = true;
+    const k = +b.dataset.k, ok = k === q.a, id = qid(q);
+    $$('.q-opt', wrap).forEach(x => { x.disabled = true; if (+x.dataset.k === q.a) x.classList.add('right'); else if (x === b) x.classList.add('wrong'); });
+    if (ok) S.wrong = S.wrong.filter(x => x !== id); else if (!S.wrong.includes(id)) S.wrong.push(id); save();
+    const ex = $('.q-exp', wrap); ex.hidden = false; ex.innerHTML = `<b>${ok ? 'Exact.' : 'Pas tout à fait.'}</b> ${q.e}`;
+    onAnswer && onAnswer(ok);
+  });
+  return wrap;
+}
+
+function pageConcept(c) {
+  const L = lecOf(c.lec), list = CONCEPTS, i = list.indexOf(c), prev = list[i - 1], next = list[i + 1];
+  const qs = QUIZ.filter(q => q.c === c.id);
+  const html = `<div class="c-head"><div class="eyebrow">Cours ${L.n} · ${L.short}</div><h1>${c.title}</h1><div class="en">${c.en} · <span class="slides-ref">slides ${c.slides}</span></div></div>
+    <section class="essentiel"><h2>L'essentiel</h2>${c.ess}</section>
+    ${c.demo ? `<section class="blk"><h2 class="eyebrow" style="font-size:13px;font-weight:500">À manipuler</h2><div class="demo"><p class="demo-hint">${DEMOS[c.demo].hint}</p><div data-demo></div></div></section>` : ''}
+    <details class="deep"><summary>Creuser (détails, exemples, formules)</summary><div class="in">${c.deep}</div></details>
+    <div class="trap"><b>Piège d'examen.</b> ${c.trap}</div>
+    ${qs.length ? `<section class="blk"><h2 class="eyebrow" style="font-size:13px;font-weight:500;margin-bottom:10px">Teste-toi</h2><div style="display:grid;gap:12px" data-qs></div></section>` : ''}
+    <div class="c-foot"><button class="btn ${isDone(c.id) ? 'good' : ''}" data-done>${isDone(c.id) ? '✓ Maîtrisé' : 'Je maîtrise ce concept'}</button>
+    <div class="row">${prev ? `<a class="btn sm" href="#${prev.id}">← ${prev.title}</a>` : ''}${next ? `<a class="btn sm pri" href="#${next.id}">${next.title} →</a>` : `<a class="btn sm pri" href="#quiz">Faire le quiz →</a>`}</div></div>`;
+  return { html, after(root) {
+    if (c.demo) DEMOS[c.demo].mount($('[data-demo]', root));
+    const qw = $('[data-qs]', root); if (qw) qs.forEach(q => qw.appendChild(qCard(q)));
+    $('[data-done]', root).addEventListener('click', e => { toggleDone(c.id); e.currentTarget.className = 'btn ' + (isDone(c.id) ? 'good' : ''); e.currentTarget.textContent = isDone(c.id) ? '✓ Maîtrisé' : 'Je maîtrise ce concept'; renderNav(c.id); });
+  } };
+}
+
+function pageQuiz(mode) {
+  const html = `<div class="c-head"><div class="eyebrow">S'entraîner</div><h1>Quiz style examen</h1><p class="muted" style="margin:0">Questions de compréhension, comme les in-class questions. Chaque réponse est expliquée.</p></div>
+    <div class="row" style="margin-bottom:16px"><div class="seg" data-m><button data-v="all">Tout</button><button data-v="l1">Cours 1</button><button data-v="l2">Cours 2</button><button data-v="err">Mes erreurs (${S.wrong.length})</button></div></div><div data-q></div>`;
+  return { html, after(root) {
+    const seg = $('[data-m]', root); $$('button', seg).forEach(b => b.classList.toggle('on', b.dataset.v === mode));
+    seg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) location.hash = b.dataset.v === 'all' ? 'quiz' : 'quiz-' + b.dataset.v; });
+    let pool = mode === 'all' ? QUIZ : mode === 'err' ? S.wrong.map(i => QUIZ[i]).filter(Boolean) : QUIZ.filter(q => q.l === mode);
+    const box = $('[data-q]', root);
+    if (!pool.length) { box.innerHTML = `<div class="q-card"><p style="margin:0">Aucune erreur enregistrée pour l'instant. Fais d'abord le quiz complet : chaque mauvaise réponse viendra s'ajouter ici jusqu'à ce que tu la réussisses.</p></div>`; return; }
+    pool = pool.slice().sort(() => Math.random() - 0.5);
+    let i = 0; const res = [];
+    const step = () => {
+      box.innerHTML = '';
+      if (i >= pool.length) {
+        const sc = Math.round(res.filter(Boolean).length / pool.length * 100);
+        if (mode === 'l1' || mode === 'l2') { S.best[mode] = Math.max(S.best[mode] || 0, sc); save(); }
+        const miss = [...new Set(pool.filter((_, k) => !res[k]).map(q => q.c))];
+        box.innerHTML = `<div class="q-card"><div class="eyebrow">Résultat</div><h2 style="font-size:40px;margin:6px 0">${res.filter(Boolean).length} / ${pool.length}</h2>
+          <p>${sc >= 85 ? 'Très solide. Tu peux passer au cours suivant.' : sc >= 60 ? 'Bonne base. Revois les fiches ci-dessous, puis relance en mode « Mes erreurs ».' : 'Reprends les fiches ci-dessous avec leurs démos, puis réessaie.'}</p>
+          ${miss.length ? `<p class="small muted" style="margin-bottom:6px">À revoir :</p><div class="chips">${miss.map(id => `<a class="chip" href="#${id}">${CONCEPTS.find(c => c.id === id).title}</a>`).join('')}</div>` : ''}
+          <div class="row" style="margin-top:16px"><button class="btn pri" data-again>Recommencer</button>${S.wrong.length ? `<a class="btn" href="#quiz-err">Mes erreurs (${S.wrong.length})</a>` : ''}</div></div>`;
+        $('[data-again]', box).addEventListener('click', () => { i = 0; res.length = 0; pool.sort(() => Math.random() - 0.5); step(); });
+        return;
+      }
+      const top = document.createElement('div'); top.className = 'q-top';
+      top.innerHTML = `<span class="eyebrow">Question ${i + 1} / ${pool.length}</span><div class="q-progress">${pool.map((_, k) => `<i class="${k < i ? (res[k] ? 'r' : 'w') : k === i ? 'c' : ''}"></i>`).join('')}</div>`;
+      box.appendChild(top);
+      const card = qCard(pool[i], ok => { res[i] = ok; const nx = document.createElement('div'); nx.className = 'row'; nx.style.marginTop = '14px';
+        nx.innerHTML = `<button class="btn pri">${i === pool.length - 1 ? 'Voir le résultat' : 'Question suivante'}</button><a class="btn sm" href="#${pool[i].c}">Revoir la fiche</a>`;
+        nx.querySelector('button').addEventListener('click', () => { i++; step(); window.scrollTo({ top: 0 }); }); card.appendChild(nx); });
+      box.appendChild(card);
+    };
+    step();
+  } };
+}
+
+function pageFormulas() {
+  return `<div class="c-head"><div class="eyebrow">Mémo</div><h1>Formulaire</h1><p class="muted" style="margin:0">Toutes les formules des cours 1 et 2 sur une page.</p></div>` +
+    FORMULAS.map(s => `<section class="fsec"><h2>${s.t}</h2><div class="fl">${s.rows.map(r => `<div><span>${r[0]}</span><span class="fx">${r[1]}</span></div>`).join('')}</div></section>`).join('') +
+    `<section class="fsec"><h2>Confusion matrix (disposition du cours)</h2><div class="tbl-wrap"><table class="cm"><tr><td colspan="2" rowspan="2" style="border:none"></td><th colspan="2">True class</th></tr><tr><th>−1</th><th>+1</th></tr>
+    <tr><th rowspan="2">Predicted class</th><th>−1</th><td class="cell-tn">True Negatives</td><td class="cell-fn">False Negatives</td></tr><tr><th>+1</th><td class="cell-fp">False Positives</td><td class="cell-tp">True Positives</td></tr></table></div>
+    <p class="small muted">Attention : la slide sur la ROC (cours 1 slide 131, cours 2 slide 10) utilise une autre disposition, avec TP en haut à gauche. Les définitions ne changent pas.</p></section>`;
+}
+
+/* ---------- router ---------- */
+function route() {
+  const h = (location.hash || '#home').slice(1), page = $('#page');
+  let out;
+  if (h.startsWith('quiz')) out = pageQuiz(h === 'quiz' ? 'all' : h.slice(5));
+  else if (h === 'formules') out = { html: pageFormulas() };
+  else { const c = CONCEPTS.find(c => c.id === h); out = c ? pageConcept(c) : { html: pageHome() }; }
+  page.innerHTML = out.html; out.after && out.after(page);
+  renderNav(h); $('#side').classList.remove('open'); window.scrollTo({ top: 0 });
+}
+window.addEventListener('hashchange', route);
+document.addEventListener('click', e => { if (e.target.closest('[data-go="home"]')) location.hash = 'home'; });
+$('#menuBtn').addEventListener('click', () => $('#side').classList.toggle('open'));
+document.addEventListener('click', e => { const side = $('#side'); if (side.classList.contains('open') && !side.contains(e.target) && !e.target.closest('#menuBtn')) side.classList.remove('open'); });
+route();
+</script>
+</body>
+</html>
